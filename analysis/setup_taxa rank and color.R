@@ -1,4 +1,4 @@
-###############################
+##############################
 # Setup - Taxa rank and color
 ##############################
 # Description
@@ -21,16 +21,16 @@ library(GRSmacrofauna)
 # could only be used in this script
 reduce_taxa_length <- function(data) {
   # label rare taxa as others
-  rank_den$Taxa <-
-    if_else(rank_den$percent < 1, "Others", "Dominant")
+  data$Taxa <-
+    if_else(data$percent < 1, "Others", "Dominant")
   # Relabel taxa > 1% with their original name
-  rank_den[rank_den$Taxa == "Dominant",]$Taxa <-
-    rank_den[rank_den$Taxa == "Dominant",]$Taxon
+  data[data$Taxa == "Dominant",]$Taxa <-
+    data[data$Taxa == "Dominant",]$Taxon
   
   # factorize $Taxa
-  rank_den_order <- rank_den$Taxa[length(unique(rank_den$Taxa)):1]
-  rank_den$Taxa <- factor(rank_den$Taxa, rank_den_order)
-  return(rank_den)
+  rank_order <- data$Taxa[length(unique(data$Taxa)):1]
+  data$Taxa <- factor(data$Taxa, rank_order)
+  return(data)
 }
 
 ###################
@@ -38,10 +38,12 @@ reduce_taxa_length <- function(data) {
 ###################
 data <-
   macrofauna_biomass %>%
+  # exclude GC1 and GS1
+  filter(!Station %in% c("GC1", "GS1")) %>% 
   # include only head-intact individuals
   filter(Condition %in% c("C", "FH")) %>%
-  # remove unclear/ pelagic individuals
-  filter(!Taxon %in% c("Unknown", "Calanoida")) %>%
+  # remove unknown/terrestrial/pelagic individuals
+  filter(!Taxon %in% c("Unknown", "Insecta", "Calanoida")) %>%
   # remove hydroids noted as stalks since no tissue are attached to the specimens
   filter(!(Taxon %in% "Hydrozoa" & Note %in% "Stalk")) %>%
   # remove the stony coral; only one individual and biases the community biomass
@@ -77,7 +79,10 @@ rank_bio <- reduce_taxa_length(rank_bio)
 # 4. Assign color by reduced taxa
 ##################################
 # all taxa list
-all_taxa <- unique(c(rank_den$Taxa, rank_bio$Taxa))
+all_taxa <-
+  as.character(rank_bio$Taxa) %>%
+  c(as.character(rank_den$Taxa)) %>%
+  unique()
 # grab colors
 taxa_color <- kelly.colors(length(all_taxa) + 1)[-1]
 # assign colors to taxa
