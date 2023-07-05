@@ -21,7 +21,7 @@ library(Polychrome)
 library(GRSmacrofauna)
 
 ##################
-# Define function
+# Define function 
 ##################
 # could only be used in this script
 reduce_taxa_length <- function(data) {
