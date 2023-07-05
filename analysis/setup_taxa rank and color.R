@@ -93,11 +93,21 @@ taxa_color <- kelly.colors(length(all_taxa) + 1)[-1]
 # assign colors to taxa
 names(taxa_color) <- all_taxa
 
-# den_taxa_color
-taxa_den_color <- taxa_color[names(taxa_color) %in% rank_den$Taxa]
+####################
+# 5. den_taxa_color
+####################
+# assign fixed color 
+taxa_den_color <- taxa_color[names(taxa_color) %in% rank_den$Taxa] 
+# reorder color with density rank
+taxa_den_color <- taxa_den_color[match(levels(rank_den$Taxa), names(taxa_den_color))]
 
-# bio_taxa_color
+####################
+# 6. bio_taxa_color
+####################
+# assign fixed color 
 taxa_bio_color <- taxa_color[names(taxa_color) %in% rank_bio$Taxa]
+# reorder color with biomass rank
+taxa_bio_color <- taxa_bio_color[match(levels(rank_bio$Taxa), names(taxa_bio_color))]
 
 ############
 # 5. Output
