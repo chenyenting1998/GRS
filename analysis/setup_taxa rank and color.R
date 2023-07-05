@@ -8,6 +8,11 @@
 # Date of creation: Unknown
 # Date of last modification: 2023/07/05
 
+#####################
+# Set up environment
+#####################
+rm(list = ls())
+
 ################
 # Load packages
 ################
