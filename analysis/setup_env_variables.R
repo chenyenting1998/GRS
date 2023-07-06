@@ -23,14 +23,14 @@ env_variables <-
   c("Depth", "DRM", "Temperature", "Salinity", "SigmaTheta", 
     "Density", "Oxygen", "Fluorescence", "Transmission",
     "Sand", "Silt", "Clay", "D50",
-    "TOC", "TN", "CN", "deltaC13", "Chla", "WC", "Porosity")
+    "TOC", "TN", "CN", "delta13C", "Chla", "WC", "Porosity")
 
 # define env variable order
 env_variables_order <- 
   c("Depth", "DRM", "Temperature", "Salinity", "SigmaTheta", 
     "Density", "Oxygen", "Fluorescence", "Transmission",
     "Sand", "Silt", "Clay", "D50",
-    "TOC", "TN", "CN", "deltaC13", "Chla", "WC", "Porosity")
+    "TOC", "TN", "CN", "delta13C", "Chla", "WC", "Porosity")
 
 # define env full names and units
 env_variables_names <- 
