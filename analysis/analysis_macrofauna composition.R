@@ -14,12 +14,6 @@
 rm(list = ls())
 
 ################
-# Define values
-################
-# multiple corer area; diameter = 10 cm
-mc_area <- (0.1/2)^2*pi
-
-################
 # Load packages
 ################
 library(dplyr)
@@ -36,6 +30,36 @@ library(writexl)
 load("data/taxa_rank.Rdata")
 load("data/taxa_color.Rdata")
 load("data/cruise_color.Rdata")
+
+################
+# Define values
+################
+# multiple corer area; diameter = 10 cm
+mc_area <- (0.1/2)^2*pi
+
+###################
+# Define functions
+###################
+plot_taxa_boxplot <- function(data, value = "Value"){
+  figure <- 
+    data %>% 
+    ungroup() %>% 
+    select(- Cruise, - Station, - Deployment, - Tube) %>% 
+    decostand(method = "log", logbase = 10) %>% 
+    mutate(Cruise = data$Cruise) %>% 
+    pivot_longer(cols = -Cruise,
+                 names_to = "Taxon",
+                 values_to = "Value") %>%
+    filter(Value != 0) %>%
+    ggplot() +
+    geom_boxplot(aes(x = Taxon, y = Value), outlier.shape = NA) +
+    geom_point(aes(x = Taxon,   y = Value, color = Cruise), position = "jitter") +
+    scale_color_manual(values = cruise_color) +
+    ylab(paste0("log[10] (", value, ")")) +
+    coord_flip() +
+    theme_bw()
+  return(figure)
+}
 
 #############################################
 # 1. Calculate unit area biomass and density 
@@ -132,28 +156,8 @@ biomass_wide <-
 hist(as.vector(as.matrix(density_wide[-c(1:4)])),
      main = "Histogram of taxa count",
      xlab = "Number of individuals")
-# species_specific boxplot
-plot_taxa_boxplot <- function(data, value = "Value"){
-  figure <- 
-    data %>% 
-    ungroup() %>% 
-    select(- Cruise, - Station, - Deployment, - Tube) %>% 
-    decostand(method = "log", logbase = 10) %>% 
-    mutate(Cruise = data$Cruise) %>% 
-    pivot_longer(cols = -Cruise,
-                 names_to = "Taxon",
-                 values_to = "Value") %>%
-    filter(Value != 0) %>%
-    ggplot() +
-    geom_boxplot(aes(x = Taxon, y = Value), outlier.shape = NA) +
-    geom_point(aes(x = Taxon,   y = Value, color = Cruise), position = "jitter") +
-    scale_color_manual(values = cruise_color) +
-    ylab(paste0("log[10] (", value, ")")) +
-    coord_flip() +
-    theme_bw()
-  return(figure)
-}
 
+# species_specific boxplot
 density_taxa_boxplot <- plot_taxa_boxplot(density_wide, "Count")
 biomass_taxa_boxplot <- plot_taxa_boxplot(biomass_wide, "Biomass")
 
