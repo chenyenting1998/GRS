@@ -83,7 +83,7 @@ env_variables_abbr <-
 # 2. Output
 ###########
 save(env_metadata,
-     env_spatialdata,
+     env_spatialvariables,
      env_variables, 
      env_variables_abbr, 
      env_variables_names, 
