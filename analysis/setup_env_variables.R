@@ -39,7 +39,7 @@ env_variables_names <-
     "DRM" = "Distance~to~river~mouth~(km)", 
     "Temperature" = "Temperature~({}^o*C)", 
     "Salinity" = "Salinity~(PSU)",
-    # "Sigma-Theta", 
+    "SigmaTheta" = "Sigma-Theta",
     "Density" = "Density~(kg/m^3)",
     "Oxygen" = "Oxygen~(mg/L)", 
     "Fluorescence" = "Fluorescence~(mg/L)",
@@ -62,7 +62,7 @@ env_variables_abbr <-
     "DRM" = "DRM", 
     "Temperature" = "Temp", 
     "Salinity" = "Sal",
-    # "Sigma-Theta", 
+    "SigmaTheta" = "sigma*theta",
     "Density" = "Den",
     "Oxygen" = "Oxy", 
     "Fluorescence" = "Fluo",
@@ -89,3 +89,4 @@ save(env_metadata,
      env_variables_names, 
      env_variables_order, 
      file = "data/env_variables.RData")
+
