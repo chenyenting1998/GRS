@@ -88,8 +88,8 @@ env_boxplot <-
               labeller = as_labeller(env_variables_names, label_parsed)) +
   scale_color_manual(values = cruise_color) +
   theme_bw() +
-  theme(legend.position = c(0.91, 0.1),
-        axis.text.x = element_text(size = 8),
+  theme(axis.text.x = element_text(size = 8),
+        # legend.position = c(0.91, 0.1),
         strip.text = element_text(size = 8))
 
 ggsave("figure/env_explore_boxplot.png", 
