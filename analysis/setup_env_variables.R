@@ -39,7 +39,7 @@ env_variables_names <-
     "DRM" = "Distance~to~river~mouth~(km)", 
     "Temperature" = "Temperature~({}^o*C)", 
     "Salinity" = "Salinity~(PSU)",
-    "SigmaTheta" = "Sigma-Theta",
+    "SigmaTheta" = "sigma*theta",
     "Density" = "Density~(kg/m^3)",
     "Oxygen" = "Oxygen~(mg/L)", 
     "Fluorescence" = "Fluorescence~(mg/L)",
