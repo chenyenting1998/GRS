@@ -156,3 +156,4 @@ ggsave("figure/env_explore_pca_plot.png",
        width = 8,
        height = 6,
        scale = 1)
+
