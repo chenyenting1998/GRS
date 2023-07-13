@@ -202,6 +202,9 @@ biomass_wide <-
   pivot_wider(names_from = Taxon, values_from = Biomass, values_fill = 0) %>% 
   ungroup()
 
+########################
+# 5. Data transformation
+########################
 # yield Box-Cox-chord transformation results
 # Note that n < 3*p, Dagnelie's Test too liberal 
 # if p > 0.05, the Dagnelie's test result is trustworthy
@@ -211,7 +214,7 @@ write_xlsx(count_BCD, path = "table/count_BCD.xlsx")
 write_xlsx(biomass_BCD, path = "table/biomass_BCD.xlsx")
 
 ##########
-# 5. Plot
+# 6. Plot
 ##########
 # wide data transformed following Anderson et al.(2006)
 # plot the frequency of # of individuals by each taxa (i.e., matrix entries)
