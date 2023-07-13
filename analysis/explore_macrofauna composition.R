@@ -192,13 +192,15 @@ biomass_percentage_composition <-
 count_wide <-
   composition %>% 
   select(-Biomass) %>% 
-  pivot_wider(names_from = Taxon, values_from = Count, values_fill = 0)
+  pivot_wider(names_from = Taxon, values_from = Count, values_fill = 0) %>% 
+  ungroup()
 
 # calculate biomass to wide data.frame
 biomass_wide <-
   composition %>% 
   select(-Count) %>% 
-  pivot_wider(names_from = Taxon, values_from = Biomass, values_fill = 0)
+  pivot_wider(names_from = Taxon, values_from = Biomass, values_fill = 0) %>% 
+  ungroup()
 
 # yield Box-Cox-chord transformation results
 # Note that n < 3*p, Dagnelie's Test too liberal 
