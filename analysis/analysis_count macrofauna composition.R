@@ -32,10 +32,10 @@ load("data/env_selected.Rdata")
 load("data/wide_data.Rdata")
 
 # source functions
-source("analysis/box.cox.chord.R")
-source("analysis/plot_pca.R")
-source("analysis/plot_rda.R")
-source("analysis/plot_scree.R")
+source("source/box.cox.chord.R")
+source("source/plot_pca.R")
+source("source/plot_rda.R")
+source("source/plot_scree.R")
 
 # Set up variables
 count_exp <- 0.5
