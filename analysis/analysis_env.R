@@ -54,7 +54,7 @@ env_spatialvariables <- c("Depth", "DRM")
 
 # subset env
 env_variables_selected <- colnames(env)[!colnames(env) %in% c(env_metadata, env_spatialvariables, omit)]
-env_selected <- env[,env_variables_selected]
+env_selected <- env[,c(env_variables_selected)]
 
 #############
 # 2. Pairplot
@@ -164,6 +164,8 @@ ggsave("figure/polished/env_pca_plot.png",
 ###########
 # 6. Output
 ###########
+# add metadata to env_selected
+env_selected <- env[,c(env_metadata, env_variables_selected)]
 save(env_variables_selected, 
      env_selected, 
      file = "data/env_selected.RData")

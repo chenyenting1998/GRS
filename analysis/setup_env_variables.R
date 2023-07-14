@@ -19,7 +19,7 @@ rm(list = ls())
 ###################
 # define env metadata and variables
 env_metadata <- c("Cruise", "Habitat", "Station", "Date", "Latitude", "Longitude")
-env_spatialvariables <- c("Depth", "DRM")
+env_variables_spatial <- c("Depth", "DRM")
 env_variables <- 
   c("Depth", "DRM", "Temperature", "Salinity", "SigmaTheta", 
     "Density", "Oxygen", "Fluorescence", "Transmission",
@@ -83,7 +83,7 @@ env_variables_abbr <-
 # 2. Output
 ###########
 save(env_metadata,
-     env_spatialvariables,
+     env_variables_spatial,
      env_variables, 
      env_variables_abbr, 
      env_variables_names, 
