@@ -34,12 +34,6 @@ load("data/env_long.RData")
 # 1. Select interested variables
 ################################
 # omit variables
-omit <- c("Salinity", "Density", "SigmaTheta", "Oxygen", "Transmission",
-          "Clay", "Silt", "Sand",
-          "delta13C",
-          "TN",
-          "WC")
-env_spatialvariables <- c("Depth", "DRM")
 # Reasoning:
 #  Salinity: salinity were within the open water range, and snapshots 
 #            of salinity change cannot inform us the variability of salinity.
@@ -51,19 +45,32 @@ env_spatialvariables <- c("Depth", "DRM")
 #  TN: strong collinearity with porosity.
 #  Water content: strong collinearity with porosity.
 
+omit <- c("Salinity", "Density", "SigmaTheta", "Oxygen", "Transmission",
+          "Clay", "Silt", "Sand",
+          "delta13C",
+          "TN",
+          "WC")
 
 # subset env
-env_variables_selected <- colnames(env)[!colnames(env) %in% c(env_metadata, env_spatialvariables, omit)]
-env_selected <- env[,c(env_variables_selected)]
+env_variables_selected <- colnames(env)[!colnames(env) %in% c(env_metadata, env_variables_spatial, omit)]
+env_selected <- env[,c(env_metadata, env_variables_selected)]
 
 #############
 # 2. Pairplot
 #############
 env_pairplot <-
-  env_selected %>% 
-  ggpairs()
+  env %>% 
+  ggpairs(columns = c(env_variables_spatial, env_variables_selected),
+          aes(color = Cruise)) +
+  scale_color_manual(values = cruise_color) +
+  scale_fill_manual(values = cruise_color) +
+  theme_bw()
 
-ggsave("figure/polished/env_pairplot.png", scale = 1.4, plot = env_pairplot)
+ggsave("figure/polished/env_pairplot.png", 
+       scale = 1.4,
+       h = 5,
+       w = 8,
+       plot = env_pairplot)
 
 ###########################
 # 3. Wilcoxon rank-sum test 
@@ -74,8 +81,14 @@ wilcox_table <-
   group_by(Variables) %>% 
   wilcox_test(Values ~ Cruise,
               comparisons = list(c("OR1-1219", "OR1-1242")))
+
+# subset
+wilcox_table_selected <- wilcox_table[wilcox_table$Variables %in% env_variables_selected,]
+
 # output
-write_xlsx(wilcox_table, "table/env_wilcox_table.xlsx")
+write_xlsx(list(wilcox_table = wilcox_table,
+                wilcox_table_selected = wilcox_table_selected), 
+           "table/env_wilcox_table.xlsx")
 
 ###########################
 # 4. PERMANOVA and PERMDISP
@@ -83,18 +96,18 @@ write_xlsx(wilcox_table, "table/env_wilcox_table.xlsx")
 set.seed(10)
 # run permanova
 env_permanova <- 
-  adonis2(scale(env_selected) ~ Cruise,
+  adonis2(scale(env_selected[env_variables_selected]) ~ Cruise,
   # adonis2(scale(env_selected) ~ Cruise,
-          data = env, 
+          data = env_selected, 
           method = "euclidean",
-          permutations = 99999)
+          permutations = 9999)
 # run permdisp
 env_disp <-
-  betadisper(vegdist(env_selected,
+  betadisper(vegdist(env_selected[env_variables_selected],
                      method = "euclidean", scale = TRUE), 
              group = env$Cruise)
 # env_disp <- betadisper(vegdist(env_selected, method = "euclidean", scale = TRUE), group = env$Cruise)
-env_permdisp <- permutest(env_disp, permutations = 99999)
+env_permdisp <- permutest(env_disp, permutations = 9999)
 
 # output
 permanova_output <-
@@ -106,7 +119,7 @@ write_xlsx(permanova_output,
 ##################################
 # 5. Principle coordinate analysis
 ##################################
-env_pca <- rda(scale(env_selected))
+env_pca <- rda(scale(env_selected[env_variables_selected]))
 
 # extract sites
 env_pca_sites <- 
@@ -129,6 +142,12 @@ env_pca_eig <-
 
 env_pca_plot <-
   ggplot() +
+  # # plot ellipse
+  # geom_polygon(data = env_pca_sites, 
+  #              aes(x = PC1, y = PC2, color = Cruise, fill = Cruise),
+  #              stat = "ellipse",
+  #              size = 1.5,
+  #              alpha = 0.3) +
   # plot variable segments
   geom_segment(data = env_pca_species,
                aes(x = PC1, y = PC2, xend = 0, yend = 0)) +
@@ -153,7 +172,8 @@ env_pca_plot <-
   scale_fill_manual(values = cruise_color) +
   coord_fixed()+
   theme_bw() +
-  theme(legend.position = c(0.1,0.1))
+  theme(legend.position = c(0.85,
+                            0.85))
 
 ggsave("figure/polished/env_pca_plot.png", 
        plot = env_pca_plot,
@@ -165,7 +185,6 @@ ggsave("figure/polished/env_pca_plot.png",
 # 6. Output
 ###########
 # add metadata to env_selected
-env_selected <- env[,c(env_metadata, env_variables_selected)]
 save(env_variables_selected, 
      env_selected, 
      file = "data/env_selected.RData")

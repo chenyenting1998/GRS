@@ -60,22 +60,9 @@ ggsave("figure/env_explore_qqplot.png", scale = 1.5, plot = env_qqplot)
 #######################
 # 3. Correlation matrix
 ####################### 
-# define a function specifivally for this code chunk
-setColnames <- function(df, Colnames){
-  # extract names of the defined colnames
-  extract_names <- names(Colnames)
-  # reorder them following the colnames of df
-  Colnames_ordered <- env_variables_abbr[match(colnames(df), extract_names)]
-  # paste new column names
-  colnames(df) <- Colnames
-  # return output
-  return(df)
-}
-
 # make rcorr object
 env_corr <-
   env[,env_variables] %>%
-  setColnames(env_variables_abbr) %>% 
   as.matrix() %>% 
   rcorr() 
 
