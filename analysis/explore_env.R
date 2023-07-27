@@ -22,6 +22,8 @@ library(rstatix) # pipe-friendly stats package
 library(ggplot2) # visualization
 library(GGally)
 library(ggrepel)
+library(Hmisc) # corrplot essentials
+library(corrplot)
 library(writexl) # xlsx
 library(GRSmacrofauna)  # data package
 
@@ -57,22 +59,56 @@ ggsave("figure/env_explore_qqplot.png", scale = 1.5, plot = env_qqplot)
 
 #######################
 # 3. Correlation matrix
-#######################
+####################### 
+# define a function specifivally for this code chunk
+setColnames <- function(df, Colnames){
+  # extract names of the defined colnames
+  extract_names <- names(Colnames)
+  # reorder them following the colnames of df
+  Colnames_ordered <- env_variables_abbr[match(colnames(df), extract_names)]
+  # paste new column names
+  colnames(df) <- Colnames
+  # return output
+  return(df)
+}
+
+# make rcorr object
+env_corr <-
+  env[,env_variables] %>%
+  setColnames(env_variables_abbr) %>% 
+  as.matrix() %>% 
+  rcorr() 
+
+# plot corrplot
 png(filename = "figure/env_explore_corr.png",
     width = 1600,
     height = 800)
 
-env_corr <- Hmisc::rcorr(as.matrix(env[,env_variables]))
-corrplot::corrplot(env_corr$r,
-                   # corrplot style
-                   method = "ellipse",
-                   type = "upper",
-                   diag = FALSE,
-                   addCoef.col = TRUE,
-                   # significance
-                   p.mat = env_corr$P,
-                   insig = "blank")
+corrplot(env_corr$r,
+         # corrplot style
+         method = "ellipse",
+         type = "upper",
+         diag = FALSE,
+         addCoef.col = TRUE,
+         # significance
+         p.mat = env_corr$P,
+         insig = "blank")
 dev.off()
+
+# create corr table
+# locate insignificant cells
+env_corr_insig <- env_corr$P <= 0.05
+# remove insignificant values
+env_corr$r[!env_corr_insig] <- NA
+# remove diagonal values
+diag(env_corr$r) <- NA
+
+# output table
+env_corr_table <- as.data.frame(env_corr$r)
+write_xlsx(list(corr_table = env_corr_table,
+                corr_table_rounded = round(env_corr_table, digits = 2)),
+           "table/env_corr.xlsx")
+
 
 ############
 # 4. Boxplot
