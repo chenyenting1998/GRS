@@ -30,15 +30,13 @@ load("data/cruise_color.Rdata")
 load("data/env_variables.Rdata")
 load("data/env_selected.Rdata")
 load("data/wide_data.Rdata")
+load("data/BC_exp.Rdata")
 
 # source functions
 source("source/box.cox.chord.R")
 source("source/plot_pca.R")
 source("source/plot_rda.R")
 source("source/plot_scree.R")
-
-# Set up variables
-count_exp <- 0.5
 
 ###############################################
 # 1. Principal component analysis -- Count data
@@ -71,7 +69,8 @@ count_pca_sc1 <-
   plot_pca(count_sc1$pca_sites, 
            count_sc1$pca_species, 
            scaling = 1, 
-           eig_vector = count_sc1$pca_eig)
+           eig_vector = count_sc1$pca_eig,
+           stretch = .4)
 # plot pca plots scaling = 2
 count_pca_sc2 <- 
   plot_pca(count_sc2$pca_sites, 
@@ -82,8 +81,18 @@ count_pca_sc2 <-
 
 # output
 ggsave(filename = "figure/polished/count_pca_screeplot.png", plot = count_pca_screeplot, scale = 1.5)
-ggsave(filename = "figure/polished/count_pca_sc1.png", plot = count_pca_sc1, scale = 1.5)
-ggsave(filename = "figure/polished/count_pca_sc2.png", plot = count_pca_sc2, scale = 1.5)
+ggsave(filename = "figure/polished/count_pca_sc1.png", 
+       plot = count_pca_sc1,
+       scale = 1,
+       width = 8,
+       height = 6)
+
+ggsave(filename = "figure/polished/count_pca_sc2.png", 
+       plot = count_pca_sc2, 
+       scale = 1,
+       width = 8,
+       height = 6)
+
 
 ####################################
 # 3. PERMANOVA and PERMDISP -- Count
@@ -145,7 +154,11 @@ count_rda_plot<-
   plot_rda_sc1(count_rda_output$rda_sites,
                count_rda_output$rda_env,
                count_rda_back)
-ggsave("figure/polished/count_rda_plot.png", plot = count_rda_plot, scale = 1.5)
+ggsave("figure/polished/count_rda_plot.png", 
+       plot = count_rda_plot, 
+       scale = 1,
+       width = 8,
+       height = 6)
 
 # Variance partitioning ------------
 # match env_spatial dataframe wtih count_wide

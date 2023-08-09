@@ -30,6 +30,7 @@ load("data/cruise_color.Rdata")
 load("data/env_variables.Rdata")
 load("data/env_selected.Rdata")
 load("data/wide_data.Rdata")
+load("data/BC_exp.Rdata")
 
 # source functions
 source("source/box.cox.chord.R")
@@ -44,39 +45,37 @@ source("source/plot_scree.R")
 # Use RDA to fit env variables onto various Box-Cox-chord transformed biomass matrix
 # Pick the exponent that yields the highest adjR2, maximizes linear fit
 # match env_selected data.frame with biomass_wide
-env_selected_expand <- 
-  left_join(biomass_wide, env_selected) %>% 
-  select(all_of(env_variables_selected))
+# env_selected_expand <- 
+#   left_join(biomass_wide, env_selected) %>% 
+#   select(all_of(env_variables_selected))
+# 
+# # set an empty df
+# bc.exp_fit <- NULL
+# 
+# for(bc.exp in c(0,0.1,0.2,0.25,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1)){
+#   # Box-Cox-chord transformation
+#   biomass_chord <- 
+#     biomass_wide %>% 
+#     select(-all_of(c("Cruise", "Station", "Deployment", "Tube"))) %>% 
+#     box.cox.chord(bc.exp)
+#   
+#   # full RDA model
+#   rda <- rda(biomass_chord ~ ., data = as.data.frame(scale(env_selected_expand)))
+#   
+#   # extract rsquared 
+#   r2 <- RsquareAdj(rda)
+#   
+#   # store info
+#   temp <- 
+#     data.frame(`Box-Cox exp` = bc.exp,
+#                r.squared = r2$r.squared,
+#                adj.r.squared = r2$adj.r.squared)
+#   # merge
+#   bc.exp_fit <- rbind(bc.exp_fit, temp)
+# }
+# bc.exp_fit
+# plot(x = bc.exp_fit$Box.Cox.exp, y = bc.exp_fit$adj.r.squared)
 
-# set an empty df
-bc.exp_fit <- NULL
-
-for(bc.exp in c(0,0.1,0.2,0.25,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1)){
-  # Box-Cox-chord transformation
-  biomass_chord <- 
-    biomass_wide %>% 
-    select(-all_of(c("Cruise", "Station", "Deployment", "Tube"))) %>% 
-    box.cox.chord(bc.exp)
-  
-  # full RDA model
-  rda <- rda(biomass_chord ~ ., data = as.data.frame(scale(env_selected_expand)))
-  
-  # extract rsquared 
-  r2 <- RsquareAdj(rda)
-  
-  # store info
-  temp <- 
-    data.frame(`Box-Cox exp` = bc.exp,
-               r.squared = r2$r.squared,
-               adj.r.squared = r2$adj.r.squared)
-  # merge
-  bc.exp_fit <- rbind(bc.exp_fit, temp)
-}
-bc.exp_fit
-plot(x = bc.exp_fit$Box.Cox.exp, y = bc.exp_fit$adj.r.squared)
-
-# define exp
-biomass_exp <- 0.25
 
 #################################################
 # 2. Principal component analysis -- Biomass data
@@ -109,7 +108,8 @@ biomass_pca_sc1 <-
   plot_pca(biomass_sc1$pca_sites, 
            biomass_sc1$pca_species, 
            scaling = 1, 
-           eig_vector = biomass_sc1$pca_eig)
+           eig_vector = biomass_sc1$pca_eig,
+           stretch = .3)
 # plot pca plots scaling = 2
 biomass_pca_sc2 <- 
   plot_pca(biomass_sc2$pca_sites, 
@@ -118,8 +118,18 @@ biomass_pca_sc2 <-
            eig_vector = biomass_sc2$pca_eig, 
            stretch = 1)
 # output
-ggsave(filename = "figure/polished/biomass_pca_sc1.png", plot = biomass_pca_sc1, scale = 1.5)
-ggsave(filename = "figure/polished/biomass_pca_sc2.png", plot = biomass_pca_sc2, scale = 1.5)
+ggsave(filename = "figure/polished/biomass_pca_sc1.png", 
+       plot = biomass_pca_sc1, 
+       scale = 1,
+       width = 8,
+       height = 6)
+
+ggsave(filename = "figure/polished/biomass_pca_sc2.png", 
+       plot = biomass_pca_sc2, 
+       scale = 1,
+       width = 8,
+       height = 6)
+
 
 ######################################
 # 3. PERMANOVA and PERMDISP -- Biomass
@@ -180,5 +190,9 @@ biomass_rda_plot<-
   plot_rda_sc1(biomass_rda_output$rda_sites,
                biomass_rda_output$rda_env,
                biomass_rda_back)
-ggsave("figure/polished/biomass_rda_plot.png", plot = biomass_rda_plot, scale = 1.5)
+ggsave("figure/polished/biomass_rda_plot.png", 
+       plot = biomass_rda_plot, 
+       scale = 1,
+       width = 8,
+       height = 6)
 
