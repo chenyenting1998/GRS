@@ -31,7 +31,7 @@ load("data/cruise_color.Rdata")
 mc_area <- (0.1 / 2) ^ 2 * pi
 
 # Load functions
-source("analysis/box.cox.chord.R")
+source("source/box.cox.chord.R")
 
 # Define internal function
 plot_taxa_boxplot <- function(data, 
@@ -128,7 +128,7 @@ composition <-
   
   # remove the stony coral; only one individual and biases the community biomass
   # maybe I should not include the core at all?
-  filter(!Taxon %in% c("Scleractinia")) %>% 
+  # filter(!Taxon %in% c("Scleractinia")) %>% 
   group_by(Cruise, Station, Deployment, Tube, Taxon) %>% 
   summarize(Count = n(),
             Biomass = sum(WM))
@@ -208,10 +208,14 @@ biomass_wide <-
 # yield Box-Cox-chord transformation results
 # Note that n < 3*p, Dagnelie's Test too liberal 
 # if p > 0.05, the Dagnelie's test result is trustworthy
-count_BCD <- as.data.frame(BCD(count_wide[-(1:4)]))
-biomass_BCD <- as.data.frame(BCD(biomass_wide[-(1:4)]))
+count_BCD <- as.data.frame(BCD(count_wide[-(1:4)])) # exp = 0.3
+biomass_BCD <- as.data.frame(BCD(biomass_wide[-(1:4)])) # exp = 0.1
 write_xlsx(count_BCD, path = "table/count_BCD.xlsx")
 write_xlsx(biomass_BCD, path = "table/biomass_BCD.xlsx")
+
+# set exponent 
+count_exp <- 0.3
+biomass_exp <- 0.1
 
 ##########
 # 6. Plot
@@ -223,18 +227,19 @@ hist(as.vector(as.matrix(count_wide[-c(1:4)])),
      xlab = "Number of individuals")
 
 # species-specific density plot
-count_taxa_distplot <- plot_taxa_dist(count_wide, "Count", exp = 0.5)
-biomass_taxa_distplot <- plot_taxa_dist(biomass_wide, "Biomass", exp = 0.5)
+count_taxa_distplot <- plot_taxa_dist(count_wide, "Count", exp = count_exp)
+biomass_taxa_distplot <- plot_taxa_dist(biomass_wide, "Biomass", exp = biomass_exp)
 
 # species_specific boxplot
-count_taxa_boxplot <- plot_taxa_boxplot(count_wide, "Count", exp = 0.5)
-biomass_taxa_boxplot <- plot_taxa_boxplot(biomass_wide, "Biomass", exp = 0.5)
+count_taxa_boxplot <- plot_taxa_boxplot(count_wide, "Count", exp = count_exp)
+biomass_taxa_boxplot <- plot_taxa_boxplot(biomass_wide, "Biomass", exp = biomass_exp)
 
 ##############
 # Data output
 ##############
 save(composition, file = "data/macrofauna composition.RData")
 save(count_wide, biomass_wide, file = "data/wide_data.Rdata")
+save(count_exp, biomass_exp, file = "data/BC_exp.Rdata")
 
 ##################
 # Figure output
