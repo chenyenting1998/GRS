@@ -37,17 +37,18 @@ get_pca_output <-
 
 # produce pca plot for assemblage ordination
 plot_pca <-
-  function(sites, species, eig_vector, scaling, stretch){
+  function(sites, species, eig_vector, scaling, stretch = 1){
     if(scaling == 1){
       plot <-
         ggplot()+
-        # plot 
-        stat_ellipse(data = sites, 
-                     aes(x = PC1, y = PC2, color = Cruise, fill = Cruise), 
-                     type = "norm", geom = "polygon",
-                     size = 1.5,
-                     alpha = 0.15,
-                     level = 0.95) +
+        # plot sp.
+        geom_segment(data = species[species$Show == TRUE,],
+                     aes(x = 0, y = 0, xend = PC1 * stretch, yend = PC2 * stretch),
+                     size = .4, color = "black")+
+        geom_label(data = species[species$Show == TRUE,],
+                   aes(x = PC1 * stretch, y = PC2 * stretch, label = Taxon),
+                   alpha = 0.5) +
+        
         # plot stations
         geom_point(data = sites, 
                    aes(x = PC1, y = PC2, color = Cruise)) +
@@ -66,17 +67,6 @@ plot_pca <-
       plot <- 
         ggplot()+
         # plot 
-        stat_ellipse(data = sites, 
-                     aes(x = PC1, y = PC2, color = Cruise, fill = Cruise), 
-                     type = "norm", geom = "polygon",
-                     size = 1.5,
-                     alpha = 0.15,
-                     level = 0.95) +
-        # plot stations
-        geom_point(data = sites, 
-                   aes(x = PC1, y = PC2, color = Cruise),
-                   shape = 1) +
-        
         # plot sp.
         geom_segment(data = species[species$Show == TRUE,],
                      aes(x = 0, y = 0, xend = PC1 * stretch, yend = PC2 * stretch),
@@ -84,6 +74,11 @@ plot_pca <-
         geom_label(data = species[species$Show == TRUE,],
                    aes(x = PC1 * stretch, y = PC2 * stretch, label = Taxon),
                    alpha = 0.5) +
+        
+        # plot stations
+        geom_point(data = sites, 
+                   aes(x = PC1, y = PC2, color = Cruise),
+                   shape = 1) +
         
         # change axis label
         xlab(paste0("PC1 (", eig_vector[1], "% of total variance explained)")) +
