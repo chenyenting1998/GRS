@@ -56,8 +56,8 @@ plot_pca <-
                         aes(x = PC1, y = PC2, color = Cruise, label = Station),
                         seed = 1) +
         # change axis label
-        xlab(paste0("PC1 (", eig_vector[1], "% of total variance explained)")) +
-        ylab(paste0("PC2 (", eig_vector[2], "% of total variance explained)")) +
+        xlab(paste0("PC1 (", eig_vector[1], "% of the total variance)")) +
+        ylab(paste0("PC2 (", eig_vector[2], "% of the total variance)")) +
         scale_color_manual(values = cruise_color) +
         scale_fill_manual(values = cruise_color) +
         coord_fixed() +
@@ -81,8 +81,8 @@ plot_pca <-
                    shape = 1) +
         
         # change axis label
-        xlab(paste0("PC1 (", eig_vector[1], "% of total variance explained)")) +
-        ylab(paste0("PC2 (", eig_vector[2], "% of total variance explained)")) +
+        xlab(paste0("PC1 (", eig_vector[1], "% of the total variance)")) +
+        ylab(paste0("PC2 (", eig_vector[2], "% of the total variance)")) +
         scale_color_manual(values = cruise_color) +
         scale_fill_manual(values = cruise_color) +
         coord_fixed() +
