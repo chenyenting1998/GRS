@@ -6,7 +6,7 @@
 
 # Author: Yen-Ting Chen
 # Date of creation: 2023/07/14
-# Date of last modification: 2023/07/14
+# Date of last modification: 2023/08/10
 
 #####################
 # Set up environment
@@ -37,45 +37,6 @@ source("source/box.cox.chord.R")
 source("source/plot_pca.R")
 source("source/plot_rda.R")
 source("source/plot_scree.R")
-
-##################################################
-# 1. Seek best fit Box-Cox transformation exponent
-##################################################
-# Exponents within [0,1] does not yield normal distribution of distances
-# Use RDA to fit env variables onto various Box-Cox-chord transformed biomass matrix
-# Pick the exponent that yields the highest adjR2, maximizes linear fit
-# match env_selected data.frame with biomass_wide
-# env_selected_expand <- 
-#   left_join(biomass_wide, env_selected) %>% 
-#   select(all_of(env_variables_selected))
-# 
-# # set an empty df
-# bc.exp_fit <- NULL
-# 
-# for(bc.exp in c(0,0.1,0.2,0.25,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1)){
-#   # Box-Cox-chord transformation
-#   biomass_chord <- 
-#     biomass_wide %>% 
-#     select(-all_of(c("Cruise", "Station", "Deployment", "Tube"))) %>% 
-#     box.cox.chord(bc.exp)
-#   
-#   # full RDA model
-#   rda <- rda(biomass_chord ~ ., data = as.data.frame(scale(env_selected_expand)))
-#   
-#   # extract rsquared 
-#   r2 <- RsquareAdj(rda)
-#   
-#   # store info
-#   temp <- 
-#     data.frame(`Box-Cox exp` = bc.exp,
-#                r.squared = r2$r.squared,
-#                adj.r.squared = r2$adj.r.squared)
-#   # merge
-#   bc.exp_fit <- rbind(bc.exp_fit, temp)
-# }
-# bc.exp_fit
-# plot(x = bc.exp_fit$Box.Cox.exp, y = bc.exp_fit$adj.r.squared)
-
 
 #################################################
 # 2. Principal component analysis -- Biomass data
@@ -139,15 +100,15 @@ biomass_permanova <-
   adonis2(biomass_chord ~ Cruise / Station,
           data = biomass_wide[,c("Cruise", "Station")],
           method = "euclidean",
-          permutations = 99999)
+          permutations = 9999)
 biomass_disp <- 
   betadisper(vegdist(biomass_chord, method = "euclidean"),
              group = biomass_wide$Cruise)
 biomass_permdisp <- 
-  permutest(biomass_disp, nperm = 99999)
+  permutest(biomass_disp, nperm = 9999)
 
-write_xlsx(list(PERMANOVA = as.data.frame(biomass_permanova),
-                PERMDISP = as.data.frame(biomass_permdisp$tab)),
+write_xlsx(list(PERMANOVA = cbind(rownames(biomass_permanova), biomass_permanova),
+                PERMDISP = cbind(rownames(biomass_permdisp$tab), biomass_permdisp$tab)),
            path = "table/biomass_permanova.xlsx")
 
 ##################################################
@@ -162,7 +123,10 @@ env_selected_expand <-
 biomass_rda <- rda(biomass_chord ~ ., data = as.data.frame(scale(env_selected_expand)))
 # backward selection
 biomass_rda_back <- ordistep(biomass_rda, method = "backward")
+
 # compare full and reduced model
+anova(biomass_rda)
+anova(biomass_rda_back)
 anova(biomass_rda, biomass_rda_back) # no sig. diff. btw the full and reduced
 # rsquared
 RsquareAdj(biomass_rda)
@@ -174,24 +138,51 @@ vif.cca(biomass_rda_back)
 ordiresids(biomass_rda)
 ordiresids(biomass_rda_back)
 
+# goodness 
+goodness(biomass_rda_back)
+
 # extract reduced model statistics
 set.seed(10)
 biomass_rda_axis <- anova.cca(biomass_rda_back, by = "axis", permutations = 9999)
 # first two rda axises are sig.
 biomass_rda_margin <- anova.cca(biomass_rda_back, by = "margin", permutations = 9999)
 # all variables are sig.
-write_xlsx(list(biomass_rda_axis = biomass_rda_axis,
-                biomass_rda_margin = biomass_rda_margin),
+write_xlsx(list(biomass_rda_axis = cbind(rownames(biomass_rda_axis), biomass_rda_axis),
+                biomass_rda_margin = cbind(rownames(biomass_rda_margin), biomass_rda_margin)),
            path = "table/biomass_rda_anova.xlsx")
 
-# 
-biomass_rda_output <- get_rda_output(biomass_rda_back, biomass_wide[1:4], env_variables_abbr)
-biomass_rda_plot<- 
-  plot_rda_sc1(biomass_rda_output$rda_sites,
-               biomass_rda_output$rda_env,
-               biomass_rda_back)
-ggsave("figure/polished/biomass_rda_plot.png", 
-       plot = biomass_rda_plot, 
+# scaling = 1 
+biomass_rda_output_sc1 <- 
+  get_rda_output(biomass_rda_back, 
+                 biomass_wide[1:4], 
+                 env_variables_abbr,
+                 scaling = 1)
+biomass_rda_plot_sc1 <- 
+  plot_rda(rda_sites = biomass_rda_output_sc1$rda_sites, 
+           rda_env = biomass_rda_output_sc1$rda_env,
+           rda_species = biomass_rda_output_sc1$rda_species,
+           rda_result = biomass_rda_back,
+           scaling = 1)
+ggsave("figure/polished/biomass_rda_plot_sc1.png", 
+       plot = biomass_rda_plot_sc1, 
+       scale = 1,
+       width = 8,
+       height = 6)
+
+# scaling = 2
+biomass_rda_output_sc2 <- 
+  get_rda_output(biomass_rda_back, 
+                 biomass_wide[1:4], 
+                 env_variables_abbr,
+                 scaling = 2)
+biomass_rda_plot_sc2 <- 
+  plot_rda(rda_sites = biomass_rda_output_sc2$rda_sites, 
+           rda_env = biomass_rda_output_sc2$rda_env,
+           rda_species = biomass_rda_output_sc2$rda_species,
+           rda_result = biomass_rda_back,
+           scaling = 2)
+ggsave("figure/polished/biomass_rda_plot_sc2.png", 
+       plot = biomass_rda_plot_sc2, 
        scale = 1,
        width = 8,
        height = 6)
