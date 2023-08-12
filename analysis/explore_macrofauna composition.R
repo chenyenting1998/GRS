@@ -202,8 +202,31 @@ biomass_wide <-
   pivot_wider(names_from = Taxon, values_from = Biomass, values_fill = 0) %>% 
   ungroup()
 
+#############
+# 5. Heat map
+#############
+count_heatmap <-
+  count_wide %>% 
+  pivot_longer(cols = -(1:4), names_to = "Taxon", values_to = "Count") %>% 
+  ggplot() +
+  geom_tile(aes(x = Station, y = factor(Taxon, rev(rank_den$Taxon)), fill = log10(Count + 1))) +
+  viridis::scale_fill_viridis() +
+  facet_grid(~Cruise, scales = "free") +
+  ylab("Taxon") +
+  theme_bw()
+
+biomass_heatmap <- 
+  biomass_wide %>% 
+  pivot_longer(cols = -(1:4), names_to = "Taxon", values_to = "Biomass") %>% 
+  ggplot() +
+  geom_tile(aes(x = Station, y = factor(Taxon, rev(rank_bio$Taxon)), fill = log10(Biomass + 1))) +
+  viridis::scale_fill_viridis() +
+  facet_grid(~Cruise, scales = "free") +
+  ylab("Taxon") +
+  theme_bw()
+
 ########################
-# 5. Data transformation
+# 6. Data transformation
 ########################
 # yield Box-Cox-chord transformation results
 # Note that n < 3*p, Dagnelie's Test too liberal 
@@ -252,3 +275,6 @@ ggsave("figure/count_taxa_boxplot.png", plot = count_taxa_boxplot)
 ggsave("figure/biomass_taxa_boxplot.png", plot = biomass_taxa_boxplot)
 ggsave("figure/count_taxa_distplot.png", plot = count_taxa_distplot)
 ggsave("figure/biomass_taxa_distplot.png", plot = biomass_taxa_distplot)
+ggsave("figure/count_heatmap.png", plot = count_heatmap)
+ggsave("figure/biomass_heatmap.png", plot = biomass_heatmap)
+
