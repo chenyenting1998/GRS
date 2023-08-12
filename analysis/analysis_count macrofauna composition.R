@@ -37,6 +37,7 @@ source("source/box.cox.chord.R")
 source("source/plot_pca.R")
 source("source/plot_rda.R")
 source("source/plot_scree.R")
+source("source/extract_goodness.R")
 
 ###############################################
 # 1. Principal component analysis -- Count data
@@ -64,7 +65,15 @@ count_sc2 <-
 
 # plot PC eigenvalues
 count_pca_screeplot <- plot_scree(count_pca)
-
+# extract goodness species
+count_pca_goodness <- extract_goodness(count_pca, "CA")
+count_pca_goodness_plot <-
+  ggplot(count_pca_goodness) +
+  geom_point(aes(x = PC2, 
+                 y = Taxon)) +
+  xlab("Cummulative variance explained to PC2") +
+  theme_bw()
+  
 # plot pca plots scaling = 1
 count_pca_sc1 <- 
   plot_pca(count_sc1$pca_sites, 
@@ -150,7 +159,13 @@ ordiresids(count_rda)
 ordiresids(count_rda_back)
 
 # species goodness
-goodness(count_rda_back)
+count_rda_back_goodness <- extract_goodness(count_rda_back, "CCA")
+count_rda_back_goodness_plot <-
+  ggplot(count_rda_back_goodness) +
+  geom_point(aes(x = RDA2, 
+                 y = Taxon)) +
+  xlab("Cummulative variance explained to PC2") +
+  theme_bw()
 
 # extract reduced model statistics
 set.seed(10)

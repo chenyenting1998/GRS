@@ -37,6 +37,7 @@ source("source/box.cox.chord.R")
 source("source/plot_pca.R")
 source("source/plot_rda.R")
 source("source/plot_scree.R")
+source("source/extract_goodness.R")
 
 #################################################
 # 2. Principal component analysis -- Biomass data
@@ -63,6 +64,15 @@ biomass_sc2 <-
 
 # plot PC eigenvalues
 biomass_pca_screeplot <- plot_scree(biomass_pca)
+
+# species goodness
+biomass_pca_goodness <- extract_goodness(biomass_pca, "CA")
+biomass_pca_goodness_plot <-
+  ggplot(biomass_pca_goodness) +
+  geom_point(aes(x = PC2, 
+                 y = Taxon)) +
+  xlab("Cummulative variance explained to PC2") +
+  theme_bw()
 
 # plot pca plots scaling = 1
 biomass_pca_sc1 <- 
@@ -139,7 +149,13 @@ ordiresids(biomass_rda)
 ordiresids(biomass_rda_back)
 
 # goodness 
-goodness(biomass_rda_back)
+biomass_rda_back_goodness <- extract_goodness(biomass_rda_back, "CCA")
+biomass_rda_back_goodness_plot <-
+  ggplot(biomass_rda_back_goodness) +
+  geom_point(aes(x = RDA2, 
+                 y = Taxon)) +
+  xlab("Cummulative variance explained to PC2") +
+  theme_bw()
 
 # extract reduced model statistics
 set.seed(10)
