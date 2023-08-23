@@ -50,10 +50,10 @@ data <-
   # remove unknown/terrestrial/pelagic individuals
   filter(!Taxon %in% c("Unknown", "Insecta", "Calanoida")) %>%
   # remove hydroids noted as stalks since no tissue are attached to the specimens
-  filter(!(Taxon %in% "Hydrozoa" & Note %in% "Stalk")) %>%
+  filter(!(Taxon %in% "Hydrozoa" & Note %in% "Stalk"))# %>%
   # remove the stony coral; only one individual and biases the community biomass
   # maybe I should not include the core at all?
-  filter(!Taxon %in% c("Scleractinia"))
+  # filter(!Taxon %in% c("Scleractinia"))
 
 #################################
 # 2. Define taxa rank by density
