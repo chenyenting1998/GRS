@@ -41,20 +41,21 @@ plot_pca <-
     if(scaling == 1){
       plot <-
         ggplot()+
-        # plot sp.
-        geom_segment(data = species[species$Show == TRUE,],
-                     aes(x = 0, y = 0, xend = PC1 * stretch, yend = PC2 * stretch),
-                     size = .4, color = "black")+
-        geom_label(data = species[species$Show == TRUE,],
-                   aes(x = PC1 * stretch, y = PC2 * stretch, label = Taxon),
-                   alpha = 0.5) +
+        
+        # add v and hline
+        geom_vline(xintercept = 0, color = "black", size = .5, linetype = 2) +
+        geom_hline(yintercept = 0, color = "black", size = .5, linetype = 2) +
         
         # plot stations
-        geom_point(data = sites, 
-                   aes(x = PC1, y = PC2, color = Cruise)) +
-        geom_text_repel(data = sites,
-                        aes(x = PC1, y = PC2, color = Cruise, label = Station),
-                        seed = 1) +
+        # geom_point(data = sites, 
+        #            aes(x = PC1, 
+        #                y = PC2, 
+        #                color = Cruise)) +
+        geom_text(data = sites,
+                  aes(x = PC1,
+                      y = PC2,
+                      color = Cruise,
+                      label = Station)) +
         # change axis label
         xlab(paste0("PC1 (", eig_vector[1], "% of the total variance)")) +
         ylab(paste0("PC2 (", eig_vector[2], "% of the total variance)")) +
@@ -67,18 +68,29 @@ plot_pca <-
       plot <- 
         ggplot()+
         # plot 
+        # add v and hline
+        geom_vline(xintercept = 0, color = "black", size = .5, linetype = 2) +
+        geom_hline(yintercept = 0, color = "black", size = .5, linetype = 2) +
+        
         # plot sp.
         geom_segment(data = species[species$Show == TRUE,],
-                     aes(x = 0, y = 0, xend = PC1 * stretch, yend = PC2 * stretch),
-                     size = .4, color = "black")+
+                     aes(x = 0, 
+                         y = 0,
+                         xend = PC1 * stretch, 
+                         yend = PC2 * stretch),
+                     size = .4, 
+                     color = "purple")+
         geom_label(data = species[species$Show == TRUE,],
-                   aes(x = PC1 * stretch, y = PC2 * stretch, label = Taxon),
-                   alpha = 0.5) +
+                   aes(x = PC1 * stretch, 
+                       y = PC2 * stretch, 
+                       label = Taxon),
+                   color = "purple") +
         
         # plot stations
         geom_point(data = sites, 
-                   aes(x = PC1, y = PC2, color = Cruise),
-                   shape = 1) +
+                   aes(x = PC1, 
+                       y = PC2, 
+                       color = Cruise)) +
         
         # change axis label
         xlab(paste0("PC1 (", eig_vector[1], "% of the total variance)")) +
