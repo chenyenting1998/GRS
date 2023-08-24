@@ -55,7 +55,7 @@ env_qqplot <-
   scale_color_manual(values = cruise_color) +
   theme_bw()
 
-ggsave("figure/env_explore_qqplot.png", scale = 1.5, plot = env_qqplot)
+ggsave("figure/qqplot/env_qqplot.png", scale = 1.5, plot = env_qqplot)
 
 #######################
 # 3. Correlation matrix
@@ -67,7 +67,7 @@ env_corr <-
   rcorr() 
 
 # plot corrplot
-png(filename = "figure/env_explore_corr.png",
+png(filename = "figure/pairplot/env_corr.png",
     width = 1600,
     height = 800)
 
@@ -94,7 +94,7 @@ diag(env_corr$r) <- NA
 env_corr_table <- as.data.frame(env_corr$r)
 write_xlsx(list(corr_table = env_corr_table,
                 corr_table_rounded = round(env_corr_table, digits = 2)),
-           "table/env_corr.xlsx")
+           "table/corr/env_corr.xlsx")
 
 
 ############
@@ -115,7 +115,7 @@ env_boxplot <-
         # legend.position = c(0.91, 0.1),
         strip.text = element_text(size = 8))
 
-ggsave("figure/env_explore_boxplot.png", 
+ggsave("figure/boxplot/env_boxplot.png", 
        plot = env_boxplot,
        width = 8,
        height = 6,
@@ -174,7 +174,7 @@ env_pca_plot <-
   theme_bw() +
   theme(legend.position = c(0.1,0.1))
 
-ggsave("figure/env_explore_pca_plot.png", 
+ggsave("figure/pca/env_all_pca_plot.png", 
        plot = env_pca_plot,
        width = 8,
        height = 6,

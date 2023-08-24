@@ -66,7 +66,7 @@ env_pairplot <-
   scale_fill_manual(values = cruise_color) +
   theme_bw()
 
-ggsave("figure/polished/env_pairplot.png", 
+ggsave("figure/pairplot/env_pairplot.png", 
        scale = 1.4,
        h = 5,
        w = 8,
@@ -88,7 +88,7 @@ wilcox_table_selected <- wilcox_table[wilcox_table$Variables %in% env_variables_
 # output
 write_xlsx(list(wilcox_table = wilcox_table,
                 wilcox_table_selected = wilcox_table_selected), 
-           "table/env_wilcox_table.xlsx")
+           "table/wilcox/env_wilcox_table.xlsx")
 
 ###########################
 # 4. PERMANOVA and PERMDISP
@@ -114,7 +114,7 @@ permanova_output <-
   list(PERMANOVA = as.data.frame(env_permanova),
        PERMDISP = as.data.frame(env_permdisp$tab))
 write_xlsx(permanova_output,
-           "table/env_permanova.xlsx")
+           "table/permanova/env_permanova.xlsx")
 
 ##################################
 # 5. Principle coordinate analysis
@@ -175,7 +175,7 @@ env_pca_plot <-
   theme(legend.position = c(0.85,
                             0.85))
 
-ggsave("figure/polished/env_pca_plot.png", 
+ggsave("figure/pca/env_pca_plot.png", 
        plot = env_pca_plot,
        width = 8,
        height = 6,

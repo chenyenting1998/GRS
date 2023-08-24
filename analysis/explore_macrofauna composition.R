@@ -71,7 +71,7 @@ plot_taxa_boxplot <- function(data,
   return(figure)
 }
 
-plot_taxa_dist <- function(data, 
+plot_taxa_den <- function(data, 
                            value = "Value", 
                            exp = 1,
                            filter_zero = TRUE){
@@ -130,7 +130,7 @@ composition <-
   # maybe I should not include the core at all?
   # filter(!Taxon %in% c("Scleractinia")) %>% 
   group_by(Cruise, Station, Deployment, Tube, Taxon) %>% 
-  summarize(Count = n(),
+  summarise(Count = n(),
             Biomass = sum(WM))
 
 ##############################
@@ -233,8 +233,8 @@ biomass_heatmap <-
 # if p > 0.05, the Dagnelie's test result is trustworthy
 count_BCD <- as.data.frame(BCD(count_wide[-(1:4)])) # exp = 0.3
 biomass_BCD <- as.data.frame(BCD(biomass_wide[-(1:4)])) # exp = 0.1
-write_xlsx(count_BCD, path = "table/count_BCD.xlsx")
-write_xlsx(biomass_BCD, path = "table/biomass_BCD.xlsx")
+write_xlsx(count_BCD, path = "table/BCc/count_BCD.xlsx")
+write_xlsx(biomass_BCD, path = "table/BCc/biomass_BCD.xlsx")
 
 # set exponent 
 count_exp <- 0.3
@@ -250,8 +250,8 @@ hist(as.vector(as.matrix(count_wide[-c(1:4)])),
      xlab = "Number of individuals")
 
 # species-specific density plot
-count_taxa_distplot <- plot_taxa_dist(count_wide, "Count", exp = count_exp)
-biomass_taxa_distplot <- plot_taxa_dist(biomass_wide, "Biomass", exp = biomass_exp)
+count_taxa_denplot <- plot_taxa_den(count_wide, "Count", exp = count_exp)
+biomass_taxa_denplot <- plot_taxa_den(biomass_wide, "Biomass", exp = biomass_exp)
 
 # species_specific boxplot
 count_taxa_boxplot <- plot_taxa_boxplot(count_wide, "Count", exp = count_exp)
@@ -267,14 +267,14 @@ save(count_exp, biomass_exp, file = "data/BC_exp.Rdata")
 ##################
 # Figure output
 ##################
-ggsave("figure/density_composition.png", plot = density_composition)
-ggsave("figure/biomass_composition.png", plot = biomass_composition)
-ggsave("figure/density_percentage_composition.png", plot = density_percentage_composition)
-ggsave("figure/biomass_percentage_composition.png", plot = biomass_percentage_composition)
-ggsave("figure/count_taxa_boxplot.png", plot = count_taxa_boxplot)
-ggsave("figure/biomass_taxa_boxplot.png", plot = biomass_taxa_boxplot)
-ggsave("figure/count_taxa_distplot.png", plot = count_taxa_distplot)
-ggsave("figure/biomass_taxa_distplot.png", plot = biomass_taxa_distplot)
-ggsave("figure/count_heatmap.png", plot = count_heatmap)
-ggsave("figure/biomass_heatmap.png", plot = biomass_heatmap)
+ggsave("figure/barplot/density_composition.png", plot = density_composition)
+ggsave("figure/barplot/biomass_composition.png", plot = biomass_composition)
+ggsave("figure/barplot/density_percentage_composition.png", plot = density_percentage_composition)
+ggsave("figure/barplot/biomass_percentage_composition.png", plot = biomass_percentage_composition)
+ggsave("figure/boxplot/count_taxa_boxplot.png", plot = count_taxa_boxplot)
+ggsave("figure/boxplot/biomass_taxa_boxplot.png", plot = biomass_taxa_boxplot)
+ggsave("figure/denplot/count_taxa_denplot.png", plot = count_taxa_denplot)
+ggsave("figure/denplot/biomass_taxa_denplot.png", plot = biomass_taxa_denplot)
+ggsave("figure/heatmap/count_heatmap.png", plot = count_heatmap)
+ggsave("figure/heatmap/biomass_heatmap.png", plot = biomass_heatmap)
 

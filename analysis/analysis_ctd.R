@@ -63,11 +63,11 @@ sal_fluo <- plot_ctd_variable(ctd, "Salinity", "Fluorescence")
 temp_Fluo <- plot_ctd_variable(ctd, "Temperature", "Fluorescence")
 
 # output
-ggsave("figure/ctd_sal_temp.png", scale = 1.2, plot = sal_temp)
-ggsave("figure/ctd_sal_dens.png", scale = 1.2, plot = sal_dens)
-ggsave("figure/ctd_sal_trans.png", scale = 1.2, plot = sal_trans)
-ggsave("figure/ctd_sal_fluo.png", scale = 1.2, plot = sal_fluo)
-ggsave("figure/ctd_temp_Fluo.png", scale = 1.2, plot = temp_Fluo)
+ggsave("figure/ctd/ctd_sal_temp.png", scale = 1.2, plot = sal_temp)
+ggsave("figure/ctd/ctd_sal_dens.png", scale = 1.2, plot = sal_dens)
+ggsave("figure/ctd/ctd_sal_trans.png", scale = 1.2, plot = sal_trans)
+ggsave("figure/ctd/ctd_sal_fluo.png", scale = 1.2, plot = sal_fluo)
+ggsave("figure/ctd/ctd_temp_Fluo.png", scale = 1.2, plot = temp_Fluo)
 
 #################
 # 3. Plot profile
@@ -94,4 +94,4 @@ ctd_profile <-
   scale_color_manual(values = station_color) +
   theme_bw()
 
-ggsave("figure/polished/ctd_profile.png", scale = 1.4, plot = ctd_profile)
+ggsave("figure/ctd/ctd_profile.png", scale = 1.4, plot = ctd_profile)
