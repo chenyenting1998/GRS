@@ -74,6 +74,11 @@ biomass_pca_goodness_plot <-
   xlab("Cummulative variance explained to PC2") +
   theme_bw()
 
+ggsave("figure/pca/biomass_pca_goodness_plot.png", 
+       plot = biomass_pca_goodness_plot,
+       width = 6,
+       height = 5)
+
 # plot pca plots scaling = 1
 biomass_pca_sc1 <- 
   plot_pca(biomass_sc1$pca_sites, 
@@ -89,13 +94,13 @@ biomass_pca_sc2 <-
            eig_vector = biomass_sc2$pca_eig, 
            stretch = 1)
 # output
-ggsave(filename = "figure/polished/biomass_pca_sc1.png", 
+ggsave(filename = "figure/pca/biomass_pca_sc1.png", 
        plot = biomass_pca_sc1, 
        scale = 1,
        width = 8,
        height = 6)
 
-ggsave(filename = "figure/polished/biomass_pca_sc2.png", 
+ggsave(filename = "figure/pca/biomass_pca_sc2.png", 
        plot = biomass_pca_sc2, 
        scale = 1,
        width = 8,
@@ -105,21 +110,22 @@ ggsave(filename = "figure/polished/biomass_pca_sc2.png",
 ######################################
 # 3. PERMANOVA and PERMDISP -- Biomass
 ######################################
+# sp
+env_sp <- env[, c("Cruise", "Station", env_variables_spatial)]
+env_sp$Depth <- scale(env_sp$Depth)
+env_sp$DRM <- scale(env_sp$DRM)
+data_temp <- left_join(biomass_wide, env_sp)
+
+# permanova
 set.seed(100)
 biomass_permanova <- 
-  adonis2(biomass_chord ~ Cruise / Station,
-          data = biomass_wide[,c("Cruise", "Station")],
+  adonis2(biomass_chord ~ Depth*Cruise*DRM,
+          data = data_temp,
           method = "euclidean",
           permutations = 9999)
-biomass_disp <- 
-  betadisper(vegdist(biomass_chord, method = "euclidean"),
-             group = biomass_wide$Cruise)
-biomass_permdisp <- 
-  permutest(biomass_disp, nperm = 9999)
 
-write_xlsx(list(PERMANOVA = cbind(rownames(biomass_permanova), biomass_permanova),
-                PERMDISP = cbind(rownames(biomass_permdisp$tab), biomass_permdisp$tab)),
-           path = "table/biomass_permanova.xlsx")
+write_xlsx(list(PERMANOVA = cbind(" " = rownames(biomass_permanova), biomass_permanova)),
+           path = "table/permanova/biomass_permanova.xlsx")
 
 ##################################################
 # 4. Canonical redundancy analysis -- Biomass data
@@ -132,44 +138,49 @@ env_selected_expand <-
 # full RDA model
 biomass_rda <- rda(biomass_chord ~ ., data = as.data.frame(scale(env_selected_expand)))
 # backward selection
-biomass_rda_back <- ordistep(biomass_rda, method = "backward")
+biomass_rda_for <- ordistep(biomass_rda, method = "forward")
 
 # compare full and reduced model
 anova(biomass_rda)
-anova(biomass_rda_back)
-anova(biomass_rda, biomass_rda_back) # no sig. diff. btw the full and reduced
+anova(biomass_rda_for)
+anova(biomass_rda, biomass_rda_for) # no sig. diff. btw the full and reduced
 # rsquared
 RsquareAdj(biomass_rda)
-RsquareAdj(biomass_rda_back) # reduced r2
+RsquareAdj(biomass_rda_for) # reduced r2
 # vif
 vif.cca(biomass_rda) # TOC and porosity have high vif
-vif.cca(biomass_rda_back)
+vif.cca(biomass_rda_for)
 # residual plots
 ordiresids(biomass_rda)
-ordiresids(biomass_rda_back)
+ordiresids(biomass_rda_for)
 
 # goodness 
-biomass_rda_back_goodness <- extract_goodness(biomass_rda_back, "CCA")
-biomass_rda_back_goodness_plot <-
-  ggplot(biomass_rda_back_goodness) +
+biomass_rda_for_goodness <- extract_goodness(biomass_rda_for, "CCA")
+biomass_rda_for_goodness_plot <-
+  ggplot(biomass_rda_for_goodness) +
   geom_point(aes(x = RDA2, 
                  y = Taxon)) +
-  xlab("Cummulative variance explained to PC2") +
+  xlab("Cummulative variance explained to RDA2") +
   theme_bw()
+
+ggsave("figure/rda/biomass_rda_goodness_plot.png", 
+       plot = biomass_rda_for_goodness_plot,
+       width = 6,
+       height = 5)
 
 # extract reduced model statistics
 set.seed(10)
-biomass_rda_axis <- anova.cca(biomass_rda_back, by = "axis", permutations = 9999)
+biomass_rda_axis <- anova.cca(biomass_rda_for, by = "axis", permutations = 9999)
 # first two rda axises are sig.
-biomass_rda_margin <- anova.cca(biomass_rda_back, by = "margin", permutations = 9999)
+biomass_rda_margin <- anova.cca(biomass_rda_for, by = "margin", permutations = 9999)
 # all variables are sig.
 write_xlsx(list(biomass_rda_axis = cbind(rownames(biomass_rda_axis), biomass_rda_axis),
                 biomass_rda_margin = cbind(rownames(biomass_rda_margin), biomass_rda_margin)),
-           path = "table/biomass_rda_anova.xlsx")
+           path = "table/rda/biomass_rda_anova.xlsx")
 
 # scaling = 1 
 biomass_rda_output_sc1 <- 
-  get_rda_output(biomass_rda_back, 
+  get_rda_output(biomass_rda_for, 
                  biomass_wide[1:4], 
                  env_variables_abbr,
                  scaling = 1)
@@ -177,9 +188,9 @@ biomass_rda_plot_sc1 <-
   plot_rda(rda_sites = biomass_rda_output_sc1$rda_sites, 
            rda_env = biomass_rda_output_sc1$rda_env,
            rda_species = biomass_rda_output_sc1$rda_species,
-           rda_result = biomass_rda_back,
+           rda_result = biomass_rda_for,
            scaling = 1)
-ggsave("figure/polished/biomass_rda_plot_sc1.png", 
+ggsave("figure/rda/biomass_rda_plot_sc1.png", 
        plot = biomass_rda_plot_sc1, 
        scale = 1,
        width = 8,
@@ -187,7 +198,7 @@ ggsave("figure/polished/biomass_rda_plot_sc1.png",
 
 # scaling = 2
 biomass_rda_output_sc2 <- 
-  get_rda_output(biomass_rda_back, 
+  get_rda_output(biomass_rda_for, 
                  biomass_wide[1:4], 
                  env_variables_abbr,
                  scaling = 2)
@@ -195,9 +206,9 @@ biomass_rda_plot_sc2 <-
   plot_rda(rda_sites = biomass_rda_output_sc2$rda_sites, 
            rda_env = biomass_rda_output_sc2$rda_env,
            rda_species = biomass_rda_output_sc2$rda_species,
-           rda_result = biomass_rda_back,
+           rda_result = biomass_rda_for,
            scaling = 2)
-ggsave("figure/polished/biomass_rda_plot_sc2.png", 
+ggsave("figure/rda/biomass_rda_plot_sc2.png", 
        plot = biomass_rda_plot_sc2, 
        scale = 1,
        width = 8,

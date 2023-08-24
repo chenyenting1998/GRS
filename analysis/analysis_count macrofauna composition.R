@@ -74,30 +74,36 @@ count_pca_goodness_plot <-
   xlab("Cummulative variance explained to PC2") +
   theme_bw()
   
+ggsave("figure/pca/count_pca_goodness_plot.png", 
+       plot = count_pca_goodness_plot,
+       width = 6,
+       height = 5)
+
 # plot pca plots scaling = 1
 count_pca_sc1 <- 
   plot_pca(count_sc1$pca_sites, 
            count_sc1$pca_species, 
            scaling = 1, 
            eig_vector = count_sc1$pca_eig,
-           stretch = .4)
+           stretch = 1)
 # plot pca plots scaling = 2
 count_pca_sc2 <- 
   plot_pca(count_sc2$pca_sites, 
            count_sc2$pca_species, 
            scaling = 2, 
            eig_vector = count_sc2$pca_eig, 
-           stretch = 2)
+           stretch = 1)
 
 # output
-ggsave(filename = "figure/polished/count_pca_screeplot.png", plot = count_pca_screeplot, scale = 1.5)
-ggsave(filename = "figure/polished/count_pca_sc1.png", 
+ggsave(filename = "figure/pca/count_pca_screeplot.png", 
+       plot = count_pca_screeplot, scale = 1.5)
+ggsave(filename = "figure/pca/count_pca_sc1.png", 
        plot = count_pca_sc1,
        scale = 1,
        width = 8,
        height = 6)
 
-ggsave(filename = "figure/polished/count_pca_sc2.png", 
+ggsave(filename = "figure/pca/count_pca_sc2.png", 
        plot = count_pca_sc2, 
        scale = 1,
        width = 8,
@@ -107,22 +113,22 @@ ggsave(filename = "figure/polished/count_pca_sc2.png",
 ####################################
 # 3. PERMANOVA and PERMDISP -- Count
 ####################################
-# count
+# sp
+env_sp <- env[, c("Cruise", "Station", env_variables_spatial)]
+env_sp$Depth <- scale(env_sp$Depth)
+env_sp$DRM <- scale(env_sp$DRM)
+data_temp <- left_join(count_wide, env_sp)
+
+# permanova
 set.seed(14)
 count_permanova <- 
-  adonis2(count_chord ~ Cruise / Station,
-          data = count_wide[,c("Cruise", "Station")],
+  adonis2(count_chord ~ Depth * DRM * Cruise,
+          data = data_temp,
           method = "euclidean",
           permutations = 9999)
-count_disp <- 
-  betadisper(vegdist(count_chord, method = "euclidean"),
-             group = count_wide$Cruise)
-count_permdisp <- 
-  permutest(count_disp, nperm = 9999)
 
-write_xlsx(list(PERMANOVA = cbind(rownames(count_permanova), count_permanova),
-                PERMDISP = cbind(rownames(count_permdisp$tab), count_permdisp$tab)),
-           path = "table/count_permanova.xlsx")
+write_xlsx(list(PERMANOVA = cbind(" " = rownames(count_permanova), count_permanova)),
+           path = "table/permanova/count_permanova.xlsx")
 
 ################################################
 # 4. Canonical redundancy analysis -- Count data
@@ -133,65 +139,71 @@ env_selected_expand <-
   select(all_of(env_variables_selected))
 
 # full RDA model
-count_rda <- rda(count_chord ~ ., data = as.data.frame(scale(env_selected_expand)))
+count_rda <- rda(count_chord ~ .,
+                 data = as.data.frame(scale(env_selected_expand)))
 # backward selection
-count_rda_back <- ordistep(count_rda, method = "backward")
+count_rda_for <- ordistep(count_rda, method = "forward")
 
 # summary
 summary(count_rda)
-summary(count_rda_back)
+summary(count_rda_for)
 
 # test difference between full and reduced model
 anova(count_rda) # the full model is significant
-anova(count_rda_back) # the reduced model is significant
-anova(count_rda, count_rda_back) # no sig. diff.
+anova(count_rda_for) # the reduced model is significant
+anova(count_rda, count_rda_for) # no sig. diff.
 
 # rsquared
 RsquareAdj(count_rda)
-RsquareAdj(count_rda_back) # slight reduction in r2
+RsquareAdj(count_rda_for) # slight reduction in r2
 
 # vif
 vif.cca(count_rda) # TOC and porosity have high vif
-vif.cca(count_rda_back)
+vif.cca(count_rda_for)
 
 # residual plots
 ordiresids(count_rda)
-ordiresids(count_rda_back)
+ordiresids(count_rda_for)
 
 # species goodness
-count_rda_back_goodness <- extract_goodness(count_rda_back, "CCA")
-count_rda_back_goodness_plot <-
-  ggplot(count_rda_back_goodness) +
+count_rda_for_goodness <- extract_goodness(count_rda_for, "CCA")
+count_rda_for_goodness_plot <-
+  ggplot(count_rda_for_goodness) +
   geom_point(aes(x = RDA2, 
                  y = Taxon)) +
-  xlab("Cummulative variance explained to PC2") +
+  xlab("Cummulative variance explained to RDA2") +
   theme_bw()
+
+ggsave("figure/rda/count_rda_for_goodness_plot.png", 
+       plot = count_rda_for_goodness_plot,
+       width = 6,
+       height = 5)
 
 # extract reduced model statistics
 set.seed(10)
-count_rda_axis <- anova.cca(count_rda_back, by = "axis", permutations = 9999)
+count_rda_axis <- anova.cca(count_rda_for, by = "axis", permutations = 9999)
 
 # first two rda axises are sig.
-count_rda_margin <- anova.cca(count_rda_back, by = "margin", permutations = 9999)
+count_rda_margin <- anova.cca(count_rda_for, by = "margin", permutations = 9999)
 # all variables are sig.
 write_xlsx(list(count_rda_axis = cbind(rownames(count_rda_axis), count_rda_axis),
                 count_rda_margin = cbind(rownames(count_rda_margin), count_rda_margin)),
-           path = "table/count_rda_anova.xlsx")
+           path = "table/rda/count_rda_anova.xlsx")
 
 # 
 # scaling = 1 
 count_rda_output_sc1 <- 
-  get_rda_output(count_rda_back, 
+  get_rda_output(count_rda_for, 
                  count_wide[1:4], 
                  env_variables_abbr,
                  scaling = 1)
 count_rda_plot_sc1 <- 
-  plot_rda(rda_sites = count_rda_output_sc1$rda_sites, 
-           rda_env = count_rda_output_sc1$rda_env,
+  plot_rda(rda_sites   = count_rda_output_sc1$rda_sites, 
+           rda_env     = count_rda_output_sc1$rda_env,
            rda_species = count_rda_output_sc1$rda_species,
-           rda_result = count_rda_back,
+           rda_result  = count_rda_for,
            scaling = 1)
-ggsave("figure/polished/count_rda_plot_sc1.png", 
+ggsave("figure/rda/count_rda_plot_sc1.png", 
        plot = count_rda_plot_sc1, 
        scale = 1,
        width = 8,
@@ -199,18 +211,19 @@ ggsave("figure/polished/count_rda_plot_sc1.png",
 
 # scaling = 2
 count_rda_output_sc2 <- 
-  get_rda_output(count_rda_back, 
+  get_rda_output(count_rda_for, 
                  count_wide[1:4], 
                  env_variables_abbr,
                  scaling = 2)
 count_rda_plot_sc2 <- 
-  plot_rda(rda_sites = count_rda_output_sc2$rda_sites, 
-           rda_env = count_rda_output_sc2$rda_env,
+  plot_rda(rda_sites   = count_rda_output_sc2$rda_sites, 
+           rda_env     = count_rda_output_sc2$rda_env,
            rda_species = count_rda_output_sc2$rda_species,
-           rda_result = count_rda_back,
+           rda_result  = count_rda_for,
            scaling = 2)
-ggsave("figure/polished/count_rda_plot_sc2.png", 
+ggsave("figure/rda/count_rda_plot_sc2.png", 
        plot = count_rda_plot_sc2, 
        scale = 1,
        width = 8,
        height = 6)
+
