@@ -76,7 +76,7 @@ ou_core <-
   relocate(Electrodes, .after = Tube)
 
 View(ou_core)
-  
+
 # TOU
 ggplot(ou_core, aes(x = Station)) +
   geom_point(aes(y = Incub_TOU), color = "red") +
