@@ -46,6 +46,20 @@ plot_pca <-
         geom_vline(xintercept = 0, color = "black", size = .5, linetype = 2) +
         geom_hline(yintercept = 0, color = "black", size = .5, linetype = 2) +
         
+        # plot sp.
+        geom_segment(data = species[species$Show == TRUE,],
+                     aes(x = 0, 
+                         y = 0,
+                         xend = PC1 * stretch, 
+                         yend = PC2 * stretch),
+                     size = .4, 
+                     color = "purple")+
+        geom_label(data = species[species$Show == TRUE,],
+                   aes(x = PC1 * stretch, 
+                       y = PC2 * stretch, 
+                       label = Taxon),
+                   size = 3,
+                   color = "purple") +
         # plot stations
         # geom_point(data = sites, 
         #            aes(x = PC1, 
@@ -55,7 +69,8 @@ plot_pca <-
                   aes(x = PC1,
                       y = PC2,
                       color = Cruise,
-                      label = Station)) +
+                      label = Station),
+                  size = 2.5) +
         # change axis label
         xlab(paste0("PC1 (", eig_vector[1], "% of the total variance)")) +
         ylab(paste0("PC2 (", eig_vector[2], "% of the total variance)")) +
@@ -84,14 +99,16 @@ plot_pca <-
                    aes(x = PC1 * stretch, 
                        y = PC2 * stretch, 
                        label = Taxon),
+                   size = 3,
                    color = "purple") +
         
         # plot stations
-        geom_point(data = sites, 
-                   aes(x = PC1, 
-                       y = PC2, 
-                       color = Cruise)) +
-        
+        geom_text(data = sites,
+                  aes(x = PC1,
+                      y = PC2,
+                      color = Cruise,
+                      label = Station),
+                  size = 2.5) +        
         # change axis label
         xlab(paste0("PC1 (", eig_vector[1], "% of the total variance)")) +
         ylab(paste0("PC2 (", eig_vector[2], "% of the total variance)")) +

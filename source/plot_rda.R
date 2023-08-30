@@ -15,7 +15,7 @@ get_rda_output <-
     # extract env scores
     rda_env <-
       scores(rda_result, scaling = scaling)$biplot %>%
-      as.data.frame
+      as.data.frame()
     rda_env$abbr <- env_abbr[match(rownames(rda_env), names(env_abbr))]
     
     # extract species scores
@@ -84,6 +84,7 @@ plot_rda <-
                    aes(x = RDA1 * stretch, 
                        y = RDA2 * stretch, 
                        label = abbr),
+                   size = 3,
                    parse = TRUE) +
         # plot stations
         # geom_point(data = rda_sites,
@@ -92,19 +93,27 @@ plot_rda <-
                   aes(x = RDA1, 
                       y = RDA2, 
                       label = Station, 
-                      color = Cruise)) +
+                      color = Cruise),
+                  size = 2.5) +
         # geom_text_repel(data = rda_sites,
         #                 aes(x = RDA1, y = RDA2, label = Station, color = Cruise),
                         # seed = 1) +
         # # plot species
-        # geom_segment(data = rda_species[rda_species$Show == TRUE,],
-        #              aes(x = 0, y = 0, xend = RDA1 * stretch, yend = RDA2 * stretch),
-        #              arrow = arrow(angle = 0),
-        #              size = .4, color = "#004D40")+
-        # geom_label(data = rda_species[rda_species$Show == TRUE,],
-        #            aes(x = RDA1 * stretch, y = RDA2 * stretch, label = Taxon),
-        #            alpha = 0.5) +
-        scale_color_manual(values = cruise_color) +
+        # species vectors
+        geom_segment(data = rda_species[rda_species$Show == TRUE,],
+                     aes(x = 0, 
+                         y = 0, 
+                         xend = RDA1 * stretch, 
+                         yend = RDA2 * stretch),
+                     arrow = arrow(angle = 0),
+                     size = .5, 
+                     color = "purple")+
+        geom_label(data = rda_species[rda_species$Show == TRUE,], 
+                   aes(x = RDA1 * stretch,
+                       y = RDA2 * stretch,
+                       label = Taxon),
+                   size = 3,
+                   color = "purple") +        scale_color_manual(values = cruise_color) +
         scale_fill_manual(values = cruise_color) +
         annotate(geom = "text",
                  x = Inf,
@@ -145,6 +154,7 @@ plot_rda <-
                        y = RDA2 * stretch, 
                        label = abbr),
                    color = "black",
+                   size = 3,
                    parse = TRUE) +
         # species vectors
         geom_segment(data = rda_species[rda_species$Show == TRUE,],
@@ -159,15 +169,19 @@ plot_rda <-
                    aes(x = RDA1 * stretch,
                        y = RDA2 * stretch,
                        label = Taxon),
+                   size = 3,
                    color = "purple") +
         # plot stations
-        geom_point(data = rda_sites,
-                   aes(x = RDA1, 
-                       y = RDA2, 
-                       color = Cruise)) +
-        # geom_text_repel(data = rda_sites,
-        #                 aes(x = RDA1, y = RDA2, label = Station, color = Cruise),
-        #                 seed = 1) +
+        # geom_point(data = rda_sites,
+        #            aes(x = RDA1, 
+        #                y = RDA2, 
+        #                color = Cruise)) +
+        geom_text(data = rda_sites,
+                  aes(x = RDA1, 
+                      y = RDA2, 
+                      label = Station, 
+                      color = Cruise),
+                  size = 2.5) +
         scale_color_manual(values = cruise_color) +
         scale_fill_manual(values = cruise_color) +
         annotate(geom = "text", 

@@ -14,6 +14,7 @@
 rm(list = ls())
 
 # Load packages
+
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -136,26 +137,31 @@ env_selected_expand <-
   select(all_of(env_variables_selected))
 
 # full RDA model
-biomass_rda <- rda(biomass_chord ~ ., data = as.data.frame(scale(env_selected_expand)))
+biomass_rda_full <- rda(biomass_chord ~ ., data = as.data.frame(scale(env_selected_expand)))
+
 # backward selection
-biomass_rda_for <- ordistep(biomass_rda, method = "forward")
+biomass_rda_back <- ordistep(biomass_rda_full, method = "backward", permutations = 9999)
 
 # compare full and reduced model
-anova(biomass_rda)
-anova(biomass_rda_for)
-anova(biomass_rda, biomass_rda_for) # no sig. diff. btw the full and reduced
+anova(biomass_rda_full) # significant
+anova(biomass_rda_back) # significant
+anova(biomass_rda_full, biomass_rda_back) # no sig. diff. btw the full and reduced
+
 # rsquared
-RsquareAdj(biomass_rda)
-RsquareAdj(biomass_rda_for) # reduced r2
+RsquareAdj(biomass_rda_full)
+RsquareAdj(biomass_rda_back) # reduced r2
 # vif
-vif.cca(biomass_rda) # TOC and porosity have high vif
-vif.cca(biomass_rda_for)
+vif.cca(biomass_rda_full) # TOC and porosity have high vif
+vif.cca(biomass_rda_back)
+
 # residual plots
-ordiresids(biomass_rda)
-ordiresids(biomass_rda_for)
+ordiresids(biomass_rda_full)
+ordiresids(biomass_rda_back)
+
+summary(biomass_rda_back)
 
 # goodness 
-biomass_rda_for_goodness <- extract_goodness(biomass_rda_for, "CCA")
+biomass_rda_for_goodness <- extract_goodness(biomass_rda_back, "CCA")
 biomass_rda_for_goodness_plot <-
   ggplot(biomass_rda_for_goodness) +
   geom_point(aes(x = RDA2, 
@@ -170,17 +176,17 @@ ggsave("figure/rda/biomass_rda_goodness_plot.png",
 
 # extract reduced model statistics
 set.seed(10)
-biomass_rda_axis <- anova.cca(biomass_rda_for, by = "axis", permutations = 9999)
+biomass_rda_axis <- anova.cca(biomass_rda_back, by = "axis", permutations = 9999)
 # first two rda axises are sig.
-biomass_rda_margin <- anova.cca(biomass_rda_for, by = "margin", permutations = 9999)
+biomass_rda_margin <- anova.cca(biomass_rda_back, by = "margin", permutations = 9999)
 # all variables are sig.
-write_xlsx(list(biomass_rda_axis = cbind(rownames(biomass_rda_axis), biomass_rda_axis),
-                biomass_rda_margin = cbind(rownames(biomass_rda_margin), biomass_rda_margin)),
+write_xlsx(list(biomass_rda_axis = cbind(" " = rownames(biomass_rda_axis), biomass_rda_axis),
+                biomass_rda_margin = cbind(" " = rownames(biomass_rda_margin), biomass_rda_margin)),
            path = "table/rda/biomass_rda_anova.xlsx")
 
 # scaling = 1 
 biomass_rda_output_sc1 <- 
-  get_rda_output(biomass_rda_for, 
+  get_rda_output(biomass_rda_back, 
                  biomass_wide[1:4], 
                  env_variables_abbr,
                  scaling = 1)
@@ -188,8 +194,9 @@ biomass_rda_plot_sc1 <-
   plot_rda(rda_sites = biomass_rda_output_sc1$rda_sites, 
            rda_env = biomass_rda_output_sc1$rda_env,
            rda_species = biomass_rda_output_sc1$rda_species,
-           rda_result = biomass_rda_for,
+           rda_result = biomass_rda_back,
            scaling = 1)
+
 ggsave("figure/rda/biomass_rda_plot_sc1.png", 
        plot = biomass_rda_plot_sc1, 
        scale = 1,
@@ -198,7 +205,7 @@ ggsave("figure/rda/biomass_rda_plot_sc1.png",
 
 # scaling = 2
 biomass_rda_output_sc2 <- 
-  get_rda_output(biomass_rda_for, 
+  get_rda_output(biomass_rda_back, 
                  biomass_wide[1:4], 
                  env_variables_abbr,
                  scaling = 2)
@@ -206,7 +213,7 @@ biomass_rda_plot_sc2 <-
   plot_rda(rda_sites = biomass_rda_output_sc2$rda_sites, 
            rda_env = biomass_rda_output_sc2$rda_env,
            rda_species = biomass_rda_output_sc2$rda_species,
-           rda_result = biomass_rda_for,
+           rda_result = biomass_rda_back,
            scaling = 2)
 ggsave("figure/rda/biomass_rda_plot_sc2.png", 
        plot = biomass_rda_plot_sc2, 
