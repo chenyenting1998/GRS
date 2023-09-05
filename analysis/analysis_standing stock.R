@@ -92,6 +92,7 @@ ss_station <-
             Biomass_mean = mean(Biomass),
             Biomass_sd = sd(Biomass)) 
 
+save(ss_core, ss_station, file = "data/standing stock.RData")
 write_xlsx(ss_station, "table/data/abundance_biomass.xlsx")
 
 ############################################################

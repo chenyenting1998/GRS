@@ -188,3 +188,5 @@ ggsave("figure/pca/env_pca_plot.png",
 save(env_variables_selected, 
      env_selected, 
      file = "data/env_selected.RData")
+
+save(env_pca, file = "data/env_pca.RData")

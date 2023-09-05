@@ -33,6 +33,7 @@ load("data/cruise_color.Rdata")
 load("data/env_variables.Rdata")
 load("data/env_selected.Rdata")
 load("data/ou.Rdata")
+load("data/standing stock.Rdata")
 
 # source function
 source("source/lm_model.avg.R")
@@ -157,3 +158,139 @@ T25TOU_env_subset <- get.models(T25TOU_env_d, subset = delta < 6 & !nested(T25TO
 T25TOU_env_avg <- model.avg(T25TOU_env_subset)
 get_model.avg_results(T25TOU_env_avg, "table/model.avg/T25.TOU_env_model.avg.xlsx")
 
+#########################
+# 3. Casual relationships
+#########################
+########################
+# core_level correlation
+########################
+ss_ou_core_data <- ss_core %>% left_join(ou_core) %>% select(-Date) %>% left_join(env, c("Cruise", "Station"))
+ss_ou_station_data <- ss_station %>% left_join(ou_station) %>% left_join(env)
+
+# casual spatial relationships with abundance, biomass, and SCOC
+# vs. DRM
+lm(Abundance ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Cruise == "OR1-1219", ]) %>% summary
+lm(Biomass ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Cruise == "OR1-1219", ]) %>% summary
+lm(In_situ_TOU ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Cruise == "OR1-1219", ]) %>% summary
+
+lm(Abundance ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Cruise == "OR1-1242", ]) %>% summary
+lm(Biomass ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Cruise == "OR1-1242", ]) %>% summary
+lm(In_situ_TOU ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Cruise == "OR1-1242", ]) %>% summary
+
+##################################
+# Core-level correlation matrix
+##################################
+ss_ou_core_corr_data <-
+  ss_core %>% 
+  left_join(ou_core) %>% 
+  select(all_of(c("Cruise", "Station",
+                  "Abundance", "Biomass", "In_situ_TOU"))) %>%
+  left_join(env[c("Cruise", "Station", 
+                  env_variables_spatial, 
+                  env_variables_selected)])
+
+ss_ou_pairplot <- 
+  ggpairs(ss_ou_core_corr_data, 
+          columns = c("Abundance", "Biomass", "In_situ_TOU"),
+          aes(color = Cruise, fill = Cruise)) +
+  scale_color_manual(values = cruise_color) +
+  scale_fill_manual(values = cruise_color) +
+  theme_bw()
+
+ggsave("figure/pairplot/ss_ou_pairplot.png",
+       plot = ss_ou_pairplot,
+       width = 5,
+       height = 4,
+       scale = 1)
+
+##################################
+# Station-level correlation matrix
+##################################
+ss_ou_station_corr_data <-
+  ss_station %>% 
+  left_join(ou_station) %>% 
+  select(all_of(c("Cruise", "Station",
+                  "Abundance_mean", "Biomass_mean", "In_situ_TOU_mean"))) %>%
+  left_join(env[c("Cruise", "Station", 
+                  env_variables_spatial, 
+                  env_variables_selected)])
+
+ss_ou_pairplot <- 
+  ggpairs(ss_ou_station_corr_data, 
+          columns = c("Abundance_mean", "Biomass_mean", "In_situ_TOU_mean"),
+          aes(color = Cruise, fill = Cruise)) +
+  scale_color_manual(values = cruise_color) +
+  scale_fill_manual(values = cruise_color) +
+  theme_bw()
+
+ggsave("figure/pairplot/ss_ou_pairplot.png",
+       plot = ss_ou_pairplot,
+       width = 5,
+       height = 4,
+       scale = 1)
+
+ss_ou_sp_env_pairplot <- 
+  ggpairs(ss_ou_station_corr_data, 
+          columns = c("Abundance_mean", "Biomass_mean", "In_situ_TOU_mean",
+                      env_variables_spatial, 
+                      env_variables_selected),
+          aes(color = Cruise, fill = Cruise)) +
+  scale_color_manual(values = cruise_color) +
+  scale_fill_manual(values = cruise_color) +
+  theme_bw()
+
+ggsave("figure/pairplot/ss_ou_sp_env_pairplot.png",
+       plot = ss_ou_sp_env_pairplot,
+       width = 10,
+       height = 6,
+       scale = 1.6)
+
+# plots
+ss_ou_names <- c("Abundance" = "Abundance~(ind.~m^{-2})",
+                 "Biomass" = "Biomass~(g~m^{-2})",
+                 "In_situ_TOU" = "SCOC~(mmol~m^{-2}~d^{-1})",
+                 "OR1-1219" = "OR1-1219",
+                 "OR1-1242" = "OR1-1242")
+ss_ou_plot_data <-
+  ss_core %>% 
+  left_join(ou_core) %>% 
+  select(all_of(c("Cruise", "Station",
+                  "Abundance", "Biomass", "In_situ_TOU"))) %>%
+  pivot_longer(cols = c("Abundance", "Biomass", "In_situ_TOU"),
+               names_to = "Variable",
+               values_to = "Value") %>% 
+  group_by(Cruise, Station, Variable) %>% 
+  summarise(mean = mean(Value),
+            sd = sd(Value)) %>% 
+  left_join(env)
+
+plot_ss_ou_env <- function(x){
+  ggplot(ss_ou_plot_data, 
+         aes(x = .data[[x]], 
+             y = mean, 
+             ymax = mean + sd, 
+             ymin = mean - sd,
+             color = Cruise,
+             label = Station)) +
+    geom_pointrange() +
+    geom_text_repel() +
+    facet_grid(Variable ~ Cruise, 
+               scales = "free",
+               labeller = as_labeller(ss_ou_names, label_parsed)) +
+    scale_color_manual(values = cruise_color) +
+    theme_bw()
+}
+ss_ou_drm <- 
+  plot_ss_ou_env("DRM") + 
+  xlab(Distance~to~River~mouth~(km)) +
+  ylab("Value")
+ss_ou_depth<- 
+  plot_ss_ou_env("Depth") + xlab(Depth~(m)) + 
+  xlab(Depth~(m)) +
+  ylab("Value")
+
+ggsave("figure/scatterplot/DRM_vs_vars.png", plot = ss_ou_drm, width = 8, height = 6)
+ggsave("figure/scatterplot/Depth_vs_vars.png", plot = ss_ou_depth, width = 8, height = 6)
+
+
+save(ss_ou_drm, ss_ou_depth, file = "data/ss_ou_drm_depth.RData")

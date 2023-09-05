@@ -86,7 +86,7 @@ biomass_pca_sc1 <-
            biomass_sc1$pca_species, 
            scaling = 1, 
            eig_vector = biomass_sc1$pca_eig,
-           stretch = .3)
+           stretch = .2)
 # plot pca plots scaling = 2
 biomass_pca_sc2 <- 
   plot_pca(biomass_sc2$pca_sites, 
@@ -120,7 +120,7 @@ data_temp <- left_join(biomass_wide, env_sp)
 # permanova
 set.seed(100)
 biomass_permanova <- 
-  adonis2(biomass_chord ~ Depth*Cruise*DRM,
+  adonis2(biomass_chord ~ Depth * Cruise + DRM * Cruise + Depth * DRM,
           data = data_temp,
           method = "euclidean",
           permutations = 9999)
@@ -195,7 +195,8 @@ biomass_rda_plot_sc1 <-
            rda_env = biomass_rda_output_sc1$rda_env,
            rda_species = biomass_rda_output_sc1$rda_species,
            rda_result = biomass_rda_back,
-           scaling = 1)
+           scaling = 1,
+           stretch = 0.2)
 
 ggsave("figure/rda/biomass_rda_plot_sc1.png", 
        plot = biomass_rda_plot_sc1, 
@@ -221,3 +222,4 @@ ggsave("figure/rda/biomass_rda_plot_sc2.png",
        width = 8,
        height = 6)
 
+save(biomass_pca_sc1, biomass_rda_plot_sc1, file = "data/biomass_ord_sc1.RData")
