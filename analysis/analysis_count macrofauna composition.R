@@ -85,7 +85,7 @@ count_pca_sc1 <-
            count_sc1$pca_species, 
            scaling = 1, 
            eig_vector = count_sc1$pca_eig,
-           stretch = 1)
+           stretch = 0.2)
 # plot pca plots scaling = 2
 count_pca_sc2 <- 
   plot_pca(count_sc2$pca_sites, 
@@ -122,7 +122,7 @@ data_temp <- left_join(count_wide, env_sp)
 # permanova
 set.seed(14)
 count_permanova <- 
-  adonis2(count_chord ~ Depth * DRM * Cruise,
+  adonis2(count_chord ~ Depth * DRM  + Depth * Cruise + DRM * Cruise,
           data = data_temp,
           method = "euclidean",
           permutations = 9999)
@@ -202,7 +202,8 @@ count_rda_plot_sc1 <-
            rda_env     = count_rda_output_sc1$rda_env,
            rda_species = count_rda_output_sc1$rda_species,
            rda_result  = count_rda_back,
-           scaling = 1)
+           scaling = 1,
+           stretch = .2)
 ggsave("figure/rda/count_rda_plot_sc1.png", 
        plot = count_rda_plot_sc1, 
        scale = 1,
@@ -226,4 +227,6 @@ ggsave("figure/rda/count_rda_plot_sc2.png",
        scale = 1,
        width = 8,
        height = 6)
+
+save(count_pca_sc1, count_rda_plot_sc1, file = "data/count_ord_sc1.RData")
 

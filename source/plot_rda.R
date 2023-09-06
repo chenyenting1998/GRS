@@ -76,29 +76,16 @@ plot_rda <-
         geom_segment(data = rda_env,
                      aes(x = 0, 
                          y = 0, 
-                         xend = RDA1 * stretch, 
-                         yend = RDA2 * stretch),
+                         xend = RDA1, 
+                         yend = RDA2),
                      arrow = arrow(angle = 0),
                      size = .5, color = "black")+
-        geom_label(data = rda_env,
-                   aes(x = RDA1 * stretch, 
-                       y = RDA2 * stretch, 
+        geom_text(data = rda_env,
+                   aes(x = RDA1 * 1.1, 
+                       y = RDA2 * 1.1, 
                        label = abbr),
                    size = 3,
                    parse = TRUE) +
-        # plot stations
-        # geom_point(data = rda_sites,
-        #            aes(x = RDA1, y = RDA2, color = Cruise)) +
-        geom_text(data = rda_sites,
-                  aes(x = RDA1, 
-                      y = RDA2, 
-                      label = Station, 
-                      color = Cruise),
-                  size = 2.5) +
-        # geom_text_repel(data = rda_sites,
-        #                 aes(x = RDA1, y = RDA2, label = Station, color = Cruise),
-                        # seed = 1) +
-        # # plot species
         # species vectors
         geom_segment(data = rda_species[rda_species$Show == TRUE,],
                      aes(x = 0, 
@@ -114,6 +101,19 @@ plot_rda <-
                        label = Taxon),
                    size = 3,
                    color = "purple") +        scale_color_manual(values = cruise_color) +
+        # plot stations
+        # geom_point(data = rda_sites,
+        #            aes(x = RDA1, y = RDA2, color = Cruise)) +
+        geom_text(data = rda_sites,
+                  aes(x = RDA1, 
+                      y = RDA2, 
+                      label = Station, 
+                      color = Cruise),
+                  size = 2.5) +
+        # geom_text_repel(data = rda_sites,
+        #                 aes(x = RDA1, y = RDA2, label = Station, color = Cruise),
+                        # seed = 1) +
+        # # plot species
         scale_fill_manual(values = cruise_color) +
         annotate(geom = "text",
                  x = Inf,
