@@ -109,11 +109,15 @@ load("data/biomass_ord_sc1.RData")
 
 count_pca_sc1 <- 
   count_pca_sc1 +
-  theme(legend.position = "none")
+  theme(legend.position = "none")+
+  scale_x_continuous(expand = expansion(0, .1)) +
+  scale_y_continuous(expand = expansion(0, .1))
 
 biomass_pca_sc1 <-
   biomass_pca_sc1 +
-  scale_x_continuous(limits = c(-0.25, 0.3))
+  scale_x_continuous(limits = c(-0.25, 0.3))+
+  scale_x_continuous(expand = expansion(0, .1)) +
+  scale_y_continuous(expand = expansion(0, .1))
 
 
 ggsave(filename = "figure/publish/macrofauna_pca_sc1.png", 

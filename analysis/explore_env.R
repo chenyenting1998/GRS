@@ -6,7 +6,7 @@
 
 # Author: Yen-Ting Chen
 # Date of creation: 2023/07/08
-# Date of last modification: 2023/07/08
+# Date of last modification: 2023/09/08
 
 #######################
 # Set up environment
@@ -31,8 +31,15 @@ library(GRSmacrofauna)  # data package
 load("data/cruise_color.RData")
 load("data/env_variables.RData")
 
+####################
+# 1. Save data table
+####################
+
+write_xlsx(list(env = env),
+           "table/env.xlsx")
+
 ################################
-# 1. Convert env to long format
+# 2. Convert env to long format
 ################################
 # env long
 env_long <- 
@@ -92,8 +99,12 @@ diag(env_corr$r) <- NA
 
 # output table
 env_corr_table <- as.data.frame(env_corr$r)
+env_corr_table_rounded <- round(env_corr_table, digits = 2)
+# attach rownames
+env_corr_table <- cbind(" " = colnames(env_corr_table), env_corr_table)
+env_corr_table_rounded <- cbind(" " = colnames(env_corr_table_rounded), env_corr_table_rounded)
 write_xlsx(list(corr_table = env_corr_table,
-                corr_table_rounded = round(env_corr_table, digits = 2)),
+                corr_table_rounded = env_corr_table_rounded),
            "table/corr/env_corr.xlsx")
 
 
