@@ -133,7 +133,8 @@ count_rda_plot_sc1_adj <-
   count_rda_plot_sc1 + 
   theme(legend.position = "none")+
   scale_x_continuous(expand = expansion(0, .1)) +
-  scale_y_continuous(expand = expansion(0, .1))
+  scale_y_continuous(expand = expansion(0, .1)) +
+  coord_fixed()
 biomass_rda_plot_sc1_adj <- 
   biomass_rda_plot_sc1 + 
   scale_x_continuous(expand = expansion(0, .1)) +

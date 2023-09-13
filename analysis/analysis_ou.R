@@ -248,7 +248,7 @@ ggsave("figure/pairplot/ss_ou_sp_env_pairplot.png",
 # plots
 ss_ou_names <- c("Abundance" = "Abundance~(ind.~m^{-2})",
                  "Biomass" = "Biomass~(g~m^{-2})",
-                 "In_situ_TOU" = "SCOC~(mmol~m^{-2}~d^{-1})",
+                 "In_situ_TOU" = "TOU~(mmol~m^{-2}~d^{-1})",
                  "OR1-1219" = "OR1-1219",
                  "OR1-1242" = "OR1-1242")
 ss_ou_plot_data <-
