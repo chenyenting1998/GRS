@@ -85,6 +85,16 @@ ggsave("figure/publish/env_pca_plot.png",
        height = 5,
        scale = 1)
 
+#############
+# CTD profile
+#############
+load("data/ctd.RData")
+
+ggsave("figure/publish/ctd_profile.png",
+       plot = ctd_profile,
+       width= 8,
+       height = 6,
+       scale = 1.2)
 
 #########################
 # Macrofauna composition 

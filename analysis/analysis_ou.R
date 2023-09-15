@@ -41,6 +41,16 @@ source("source/lm_model.avg.R")
 #############################
 # 1. Spatial patterns of SCOC 
 #############################
+# basic stats
+mean(ou_core$In_situ_TOU)
+sd(ou_core$In_situ_TOU)
+ou_station %>%
+  select(Cruise, Station,
+         In_situ_TOU_mean, In_situ_TOU_sd,
+         In_situ_DOU_mean, In_situ_DOU_sd,
+         OPD_mean, OPD_sd) %>%
+write_xlsx("table/data/ou.xlsx")
+
 # set up data
 sp <- 
   env %>% 

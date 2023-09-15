@@ -93,5 +93,5 @@ ctd_profile <-
   scale_x_reverse() +
   scale_color_manual(values = station_color) +
   theme_bw()
-
+save(ctd_profile, file = "data/ctd.RData")
 ggsave("figure/ctd/ctd_profile.png", scale = 1.4, plot = ctd_profile)

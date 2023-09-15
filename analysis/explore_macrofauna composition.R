@@ -112,7 +112,8 @@ plot_taxa_den <- function(data,
 #############################################
 # 1. Calculate unit area density and biomass 
 #############################################
-composition <- 
+# remove unwanted specimen
+x <- 
   macrofauna_biomass %>%
   # exclude GC1 and GS1
   filter(!Station %in% c("GC1", "GS1")) %>% 
@@ -124,11 +125,34 @@ composition <-
   filter(!Taxon %in% c("Unknown", "Insecta","Calanoida")) %>%
   
   # remove hydroids noted as stalks since no tissue are attached to the specimens
-  filter(!(Taxon %in% "Hydrozoa" & Note %in% "Stalk")) %>%
-  
-  # remove the stony coral; only one individual and biases the community biomass
-  # maybe I should not include the core at all?
-  # filter(!Taxon %in% c("Scleractinia")) %>% 
+  filter(!(Taxon %in% "Hydrozoa" & Note %in% "Stalk"))
+
+# total taxa
+unique(x$Taxon)  # 27 taxa
+# percentage
+count_per_table <-
+  x %>% 
+  group_by(Cruise, Station, Taxon) %>% 
+  summarize(Count_sum = n()) %>% 
+  mutate(Count_per = round(Count_sum/ sum(Count_sum) * 100, 2)) %>% 
+  select(-Count_sum) %>%
+  pivot_wider(names_from = "Taxon", 
+              values_from = "Count_per",
+              values_fill = 0)
+
+WM_per_table <-
+  x %>% 
+  group_by(Cruise, Station, Taxon) %>% 
+  summarize(WM_sum = sum(WM)) %>% 
+  mutate(WM_per = round(WM_sum / sum(WM_sum) * 100, 2)) %>% 
+  select(-WM_sum) %>%
+  pivot_wider(names_from = "Taxon", 
+              values_from = "WM_per",
+              values_fill = 0)
+
+# composition
+composition <- 
+  x %>%
   group_by(Cruise, Station, Deployment, Tube, Taxon) %>% 
   summarise(Count = n(),
             Biomass = sum(WM))
