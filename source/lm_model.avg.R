@@ -1,6 +1,7 @@
 get_lm_summary <- function(x, path){
   # extract coefs ====
   coefficients <- as.data.frame(x$coefficients)
+  coefficients <- round(coefficients, 4)
   coefficients <- cbind(" " = row.names(coefficients), coefficients)
   
   # extract full model statistics ====
