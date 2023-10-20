@@ -1,6 +1,7 @@
 # Gaoping River and shelf analysis
 
-Reproducible data analysis for the paper *Responses of macrofauna community structure and function to extreme weather events on the river-influenced continental shelf*.
+Reproducible data analysis for the paper Chen et al. (in prep).
+
 Data used in this analysis is stored in a separate repository: https://github.com/chenyenting1998/GRSmacrofauna.
 
 ## File structure
