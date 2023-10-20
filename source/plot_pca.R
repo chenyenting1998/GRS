@@ -68,7 +68,7 @@ plot_pca <-
         geom_text(data = sites,
                   aes(x = PC1,
                       y = PC2,
-                      color = Cruise,
+                      color = Month,
                       label = Station),
                   size = 2.5) +
         # change axis label
@@ -106,7 +106,7 @@ plot_pca <-
         geom_text(data = sites,
                   aes(x = PC1,
                       y = PC2,
-                      color = Cruise,
+                      color = Month,
                       label = Station),
                   size = 2.5) +        
         # change axis label
