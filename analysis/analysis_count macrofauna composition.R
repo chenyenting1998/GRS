@@ -39,13 +39,18 @@ source("source/plot_rda.R")
 source("source/plot_scree.R")
 source("source/extract_goodness.R")
 
+add_month <- function(x){
+  x$Month <- if_else(x$Cruise == "OR1-1219", "March", "October")
+  return(x)
+}
+
 ###############################################
 # 1. Principal component analysis -- Count data
 ###############################################
 # Box-Cox-chord transformation
 count_chord <- 
   count_wide %>% 
-  select(-all_of(c("Cruise", "Station", "Deployment", "Tube"))) %>% 
+  select(-all_of(c("Cruise", "Month", "Station", "Deployment", "Tube"))) %>% 
   box.cox.chord(count_exp)
 
 # tb-PCA
@@ -55,12 +60,12 @@ summary(count_pca)
 # get output scaling = 1
 count_sc1 <- 
   get_pca_output(count_pca, 
-                 metadata = count_wide[1:2],
+                 metadata = count_wide[1:5],
                  scaling = 1)
 # get output scaling = 2
 count_sc2 <- 
   get_pca_output(count_pca, 
-                 metadata = count_wide[1:2], 
+                 metadata = count_wide[1:5], 
                  scaling = 2)
 
 # plot PC eigenvalues
@@ -117,12 +122,13 @@ ggsave(filename = "figure/pca/count_pca_sc2.png",
 env_sp <- env[, c("Cruise", "Station", env_variables_spatial)]
 env_sp$Depth <- scale(env_sp$Depth)
 env_sp$DRM <- scale(env_sp$DRM)
+env_sp <- add_month(env_sp)
 data_temp <- left_join(count_wide, env_sp)
 
 # permanova
 set.seed(14)
 count_permanova <- 
-  adonis2(count_chord ~ Depth * DRM  + Depth * Cruise + DRM * Cruise,
+  adonis2(count_chord ~ Depth * DRM  + Depth * Month + DRM * Month,
           data = data_temp,
           method = "euclidean",
           permutations = 9999)
@@ -194,7 +200,7 @@ write_xlsx(list(count_rda_axis = cbind(" " = rownames(count_rda_axis), count_rda
 # scaling = 1 
 count_rda_output_sc1 <- 
   get_rda_output(count_rda_back, 
-                 count_wide[1:4], 
+                 count_wide[1:5], 
                  env_variables_abbr,
                  scaling = 1)
 count_rda_plot_sc1 <- 
@@ -213,7 +219,7 @@ ggsave("figure/rda/count_rda_plot_sc1.png",
 # scaling = 2
 count_rda_output_sc2 <- 
   get_rda_output(count_rda_back, 
-                 count_wide[1:4], 
+                 count_wide[1:5], 
                  env_variables_abbr,
                  scaling = 2)
 count_rda_plot_sc2 <- 

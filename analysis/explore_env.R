@@ -31,10 +31,14 @@ library(GRSmacrofauna)  # data package
 load("data/cruise_color.RData")
 load("data/env_variables.RData")
 
+add_month <- function(x){
+  x$Month <- if_else(x$Cruise == "OR1-1219", "March", "October")
+  return(x)
+}
+
 ####################
 # 1. Save data table
 ####################
-
 write_xlsx(list(env = env),
            "table/env.xlsx")
 
@@ -47,7 +51,8 @@ env_long <-
   filter(!Station %in% c("GC1", "GS1")) %>% 
   pivot_longer(cols = all_of(env_variables),
                names_to = "Variables",
-               values_to = "Values")
+               values_to = "Values") %>% 
+  add_month()
 
 save(env_long, file = "data/env_long.RData")
 
@@ -114,7 +119,7 @@ write_xlsx(list(corr_table = env_corr_table,
 env_boxplot <-
   env_long %>% 
   # filter(!Variables %in% c("Sigma-Theta", "WC")) %>% 
-  ggplot(aes(x = Cruise, y = Values, color = Cruise))+
+  ggplot(aes(x = Month, y = Values, color = Month))+
   geom_boxplot(outlier.shape = NA) +
   geom_point(position = "jitter") +
   facet_wrap( ~ factor(Variables, env_variables), 
@@ -141,7 +146,8 @@ env_pca <- rda(scale(env[,env_variables]))
 env_pca_sites <- 
   scores(env_pca, scaling = 1)$sites %>% 
   as.data.frame() %>% 
-  cbind(env[c("Cruise", "Station")])
+  cbind(env[c("Cruise", "Station")]) %>% 
+  add_month()
 
 # extract species (env var.)
 env_pca_species <- 
@@ -172,9 +178,9 @@ env_pca_plot <-
 
   # plot stations
   geom_point(data = env_pca_sites, 
-             aes(x = PC1, y = PC2, color = Cruise)) +
+             aes(x = PC1, y = PC2, color = Month)) +
   geom_label(data = env_pca_sites, 
-             aes(x = PC1, y = PC2, label = Station, color = Cruise)) +
+             aes(x = PC1, y = PC2, label = Station, color = Month)) +
   
   # change axis label
   xlab(paste0("PC1 (", env_pca_eig[1], "% of total variance explained)")) +
@@ -183,7 +189,7 @@ env_pca_plot <-
   scale_fill_manual(values = cruise_color) +
   coord_fixed()+
   theme_bw() +
-  theme(legend.position = c(0.1,0.1))
+  theme(legend.position = c(0.85,0.1))
 
 ggsave("figure/pca/env_all_pca_plot.png", 
        plot = env_pca_plot,

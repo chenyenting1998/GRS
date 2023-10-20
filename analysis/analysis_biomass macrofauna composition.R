@@ -40,13 +40,18 @@ source("source/plot_rda.R")
 source("source/plot_scree.R")
 source("source/extract_goodness.R")
 
+add_month <- function(x){
+  x$Month <- if_else(x$Cruise == "OR1-1219", "March", "October")
+  return(x)
+}
+
 #################################################
 # 2. Principal component analysis -- Biomass data
 #################################################
 # Box-Cox-chord transformation
 biomass_chord <- 
   biomass_wide %>% 
-  select(-all_of(c("Cruise", "Station", "Deployment", "Tube"))) %>% 
+  select(-all_of(c("Cruise", "Station", "Deployment", "Tube", "Month"))) %>% 
   box.cox.chord(biomass_exp)
 
 # tb-PCA
@@ -55,12 +60,12 @@ biomass_pca <- rda(biomass_chord)
 # get output scaling = 1
 biomass_sc1 <- 
   get_pca_output(biomass_pca, 
-                 metadata = biomass_wide[1:2],
+                 metadata = biomass_wide[1:5],
                  scaling = 1)
 # get output scaling = 2
 biomass_sc2 <- 
   get_pca_output(biomass_pca, 
-                 metadata = biomass_wide[1:2], 
+                 metadata = biomass_wide[1:5], 
                  scaling = 2)
 
 # plot PC eigenvalues
@@ -115,12 +120,13 @@ ggsave(filename = "figure/pca/biomass_pca_sc2.png",
 env_sp <- env[, c("Cruise", "Station", env_variables_spatial)]
 env_sp$Depth <- scale(env_sp$Depth)
 env_sp$DRM <- scale(env_sp$DRM)
+env_sp <- add_month(env_sp)
 data_temp <- left_join(biomass_wide, env_sp)
 
 # permanova
 set.seed(100)
 biomass_permanova <- 
-  adonis2(biomass_chord ~ Depth * Cruise + DRM * Cruise + Depth * DRM,
+  adonis2(biomass_chord ~ Depth * Month + DRM * Month + Depth * DRM,
           data = data_temp,
           method = "euclidean",
           permutations = 9999)
@@ -187,7 +193,7 @@ write_xlsx(list(biomass_rda_axis = cbind(" " = rownames(biomass_rda_axis), bioma
 # scaling = 1 
 biomass_rda_output_sc1 <- 
   get_rda_output(biomass_rda_back, 
-                 biomass_wide[1:4], 
+                 biomass_wide[1:5], 
                  env_variables_abbr,
                  scaling = 1)
 biomass_rda_plot_sc1 <- 
@@ -207,7 +213,7 @@ ggsave("figure/rda/biomass_rda_plot_sc1.png",
 # scaling = 2
 biomass_rda_output_sc2 <- 
   get_rda_output(biomass_rda_back, 
-                 biomass_wide[1:4], 
+                 biomass_wide[1:5], 
                  env_variables_abbr,
                  scaling = 2)
 biomass_rda_plot_sc2 <- 

@@ -42,14 +42,14 @@ plot_taxa_boxplot <- function(data,
   data_preped <- 
     data %>% 
     ungroup() %>% 
-    select(- Cruise, - Station, - Deployment, - Tube)
+    select(- Cruise, - Month, - Station, - Deployment, - Tube)
   # take exp
   data_preped <- data_preped^exp
   # convert to long data
   data_preped <- 
     data_preped %>%
-    mutate(Cruise = data$Cruise) %>% 
-    pivot_longer(cols = -Cruise,
+    mutate(Month = data$Month) %>% 
+    pivot_longer(cols = -Month,
                  names_to = "Taxon",
                  values_to = "Value")
   # remove zeros
@@ -63,7 +63,7 @@ plot_taxa_boxplot <- function(data,
     data_preped %>% 
     ggplot() +
     geom_boxplot(aes(x = Taxon, y = Value), outlier.shape = NA) +
-    geom_point(aes(x = Taxon,   y = Value, color = Cruise), position = "jitter") +
+    geom_point(aes(x = Taxon,   y = Value, color = Month), position = "jitter") +
     scale_color_manual(values = cruise_color) +
     ylab(paste0("log[10] (", value, ")")) +
     coord_flip() +
@@ -79,7 +79,7 @@ plot_taxa_den <- function(data,
   data_preped <- 
     data %>% 
     ungroup() %>% 
-    select(- Cruise, - Station, - Deployment, - Tube) 
+    select(- Cruise, - Month, - Station, - Deployment, - Tube)
   
   # take the exp
   data_preped <- data_preped^exp
@@ -87,8 +87,8 @@ plot_taxa_den <- function(data,
   # convert to long data
   data_preped <-
     data_preped %>% 
-    mutate(Cruise = data$Cruise) %>% 
-    pivot_longer(cols = -Cruise,
+    mutate(Month = data$Month) %>% 
+    pivot_longer(cols = -Month,
                  names_to = "Taxon",
                  values_to = "Value")
   # remove zeros
@@ -107,6 +107,11 @@ plot_taxa_den <- function(data,
     coord_flip() +
     theme_bw()
   return(figure)
+}
+
+add_month <- function(x){
+  x$Month <- if_else(x$Cruise == "OR1-1219", "March", "October")
+  return(x)
 }
 
 #############################################
@@ -133,7 +138,7 @@ unique(x$Taxon)  # 27 taxa
 count_per_table <-
   x %>% 
   group_by(Cruise, Station, Taxon) %>% 
-  summarize(Count_sum = n()) %>% 
+  summarise(Count_sum = n()) %>% 
   mutate(Count_per = round(Count_sum/ sum(Count_sum) * 100, 2)) %>% 
   select(-Count_sum) %>%
   pivot_wider(names_from = "Taxon", 
@@ -143,7 +148,7 @@ count_per_table <-
 WM_per_table <-
   x %>% 
   group_by(Cruise, Station, Taxon) %>% 
-  summarize(WM_sum = sum(WM)) %>% 
+  summarise(WM_sum = sum(WM)) %>% 
   mutate(WM_per = round(WM_sum / sum(WM_sum) * 100, 2)) %>% 
   select(-WM_sum) %>%
   pivot_wider(names_from = "Taxon", 
@@ -155,7 +160,8 @@ composition <-
   x %>%
   group_by(Cruise, Station, Deployment, Tube, Taxon) %>% 
   summarise(Count = n(),
-            Biomass = sum(WM))
+            Biomass = sum(WM)) %>% 
+  add_month()
 
 ##############################
 # 2. Plot density composition
@@ -168,7 +174,7 @@ density_composition <-
     fill = Taxa
   )) +
   geom_bar(stat = "identity") +
-  facet_grid(~ Cruise, scales = "free") +
+  facet_grid(~ Month, scales = "free") +
   scale_fill_manual(values = taxa_den_color) +
   ylab(Density~(ind.~m^{-2})) +
   theme_bw()
@@ -177,7 +183,7 @@ density_percentage_composition <-
   add_coarse_taxa(composition, match_file = rank_den, output = "Taxa") %>%
   ggplot(aes(x = Station, y = Count, fill = Taxa)) +
   geom_bar(position = "fill", stat = "identity") +
-  facet_grid( ~ Cruise, scales = "free") +
+  facet_grid( ~ Month, scales = "free") +
   scale_fill_manual(values = taxa_den_color) +
   scale_y_continuous(labels = scales::percent) +
   ylab(Density~("%")) +
@@ -194,7 +200,7 @@ biomass_composition <-
     fill = Taxa
   )) +
   geom_bar(stat = "identity") +
-  facet_grid( ~ Cruise, scales = "free") +
+  facet_grid( ~ Month, scales = "free") +
   scale_fill_manual(values = taxa_bio_color) +
   ylab(Wet ~ mass ~ (g~m ^ {-2})) +
   theme_bw()
@@ -203,7 +209,7 @@ biomass_percentage_composition <-
   add_coarse_taxa(composition, match_file = rank_bio, output = "Taxa") %>% 
   ggplot(aes(x = Station, y = Biomass, fill = Taxa)) +
   geom_bar(position = "fill", stat = "identity") +
-  facet_grid(~Cruise, scales = "free") +
+  facet_grid(~Month, scales = "free") +
   scale_fill_manual(values = taxa_bio_color)+
   scale_y_continuous(labels = scales::percent) +
   ylab(Wet~mass~("%")) +
@@ -231,21 +237,21 @@ biomass_wide <-
 #############
 count_heatmap <-
   count_wide %>% 
-  pivot_longer(cols = -(1:4), names_to = "Taxon", values_to = "Count") %>% 
+  pivot_longer(cols = -(1:5), names_to = "Taxon", values_to = "Count") %>% 
   ggplot() +
   geom_tile(aes(x = Station, y = factor(Taxon, rev(rank_den$Taxon)), fill = log10(Count + 1))) +
   viridis::scale_fill_viridis() +
-  facet_grid(~Cruise, scales = "free") +
+  facet_grid(~Month, scales = "free") +
   ylab("Taxon") +
   theme_bw()
 
 biomass_heatmap <- 
   biomass_wide %>% 
-  pivot_longer(cols = -(1:4), names_to = "Taxon", values_to = "Biomass") %>% 
+  pivot_longer(cols = -(1:5), names_to = "Taxon", values_to = "Biomass") %>% 
   ggplot() +
   geom_tile(aes(x = Station, y = factor(Taxon, rev(rank_bio$Taxon)), fill = log10(Biomass + 1))) +
   viridis::scale_fill_viridis() +
-  facet_grid(~Cruise, scales = "free") +
+  facet_grid(~Month, scales = "free") +
   ylab("Taxon") +
   theme_bw()
 
@@ -255,8 +261,8 @@ biomass_heatmap <-
 # yield Box-Cox-chord transformation results
 # Note that n < 3*p, Dagnelie's Test too liberal 
 # if p > 0.05, the Dagnelie's test result is trustworthy
-count_BCD <- as.data.frame(BCD(count_wide[-(1:4)])) # exp = 0.3
-biomass_BCD <- as.data.frame(BCD(biomass_wide[-(1:4)])) # exp = 0.1
+count_BCD <- as.data.frame(BCD(count_wide[-(1:5)])) # exp = 0.3
+biomass_BCD <- as.data.frame(BCD(biomass_wide[-(1:5)])) # exp = 0.1
 write_xlsx(count_BCD, path = "table/BCc/count_BCD.xlsx")
 write_xlsx(biomass_BCD, path = "table/BCc/biomass_BCD.xlsx")
 
@@ -269,7 +275,7 @@ biomass_exp <- 0.1
 ##########
 # wide data transformed following Anderson et al.(2006)
 # plot the frequency of # of individuals by each taxa (i.e., matrix entries)
-hist(as.vector(as.matrix(count_wide[-c(1:4)])),
+hist(as.vector(as.matrix(count_wide[-c(1:5)])),
      main = "Histogram of taxa count",
      xlab = "Number of individuals")
 

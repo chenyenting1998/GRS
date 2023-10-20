@@ -6,7 +6,7 @@
 
 # Author: Yen-Ting Chen
 # Date of creation: Unknown
-# Date of last modification: 2023/07/06
+# Date of last modification: 2023/10/20
 
 #######################
 # Set up environment
@@ -29,6 +29,12 @@ library(GRSmacrofauna)  # data package
 load("data/cruise_color.RData")
 load("data/env_variables.RData")
 load("data/env_long.RData")
+
+# add month
+add_month <- function(x){
+  x$Month <- if_else(x$Cruise == "OR1-1219", "March", "October")
+  return(x)
+}
 
 ################################
 # 1. Select interested variables
@@ -60,8 +66,9 @@ env_selected <- env[,c(env_metadata, env_variables_selected)]
 #############
 env_pairplot <-
   env %>% 
+  add_month() %>% 
   ggpairs(columns = c(env_variables_spatial, env_variables_selected),
-          aes(color = Cruise)) +
+          aes(color = Month)) +
   scale_color_manual(values = cruise_color) +
   scale_fill_manual(values = cruise_color) +
   theme_bw()
@@ -77,10 +84,14 @@ ggsave("figure/pairplot/env_pairplot.png",
 ###########################
 # set up an empty object
 wilcox_table <- 
-  env_long %>% 
+  env %>% 
+  pivot_longer(cols = all_of(env_variables), 
+               names_to = "Variables", 
+               values_to = "Values") %>% 
+  add_month() %>% 
   group_by(Variables) %>% 
-  wilcox_test(Values ~ Cruise,
-              comparisons = list(c("OR1-1219", "OR1-1242")))
+  wilcox_test(Values ~ Month,
+              comparisons = list(c("March", "October")))
 
 # subset
 wilcox_table_selected <- wilcox_table[wilcox_table$Variables %in% env_variables_selected,]
@@ -95,17 +106,18 @@ write_xlsx(list(wilcox_table = wilcox_table,
 ###########################
 set.seed(10)
 # run permanova
+env_sel_month <- add_month(env_selected)
 env_permanova <- 
-  adonis2(scale(env_selected[env_variables_selected]) ~ Cruise,
-  # adonis2(scale(env_selected) ~ Cruise,
-          data = env_selected, 
+  adonis2(scale(env_sel_month[env_variables_selected]) ~ Month,
+  # adonis2(scale(env_sel_month) ~ Month,
+          data = env_sel_month, 
           method = "euclidean",
           permutations = 9999)
 # run permdisp
 env_disp <-
-  betadisper(vegdist(env_selected[env_variables_selected],
+  betadisper(vegdist(env_sel_month[env_variables_selected],
                      method = "euclidean", scale = TRUE), 
-             group = env$Cruise)
+             group = env_sel_month$Month)
 # env_disp <- betadisper(vegdist(env_selected, method = "euclidean", scale = TRUE), group = env$Cruise)
 env_permdisp <- permutest(env_disp, permutations = 9999)
 
@@ -119,13 +131,13 @@ write_xlsx(permanova_output,
 ##################################
 # 5. Principle coordinate analysis
 ##################################
-env_pca <- rda(scale(env_selected[env_variables_selected]))
+env_pca <- rda(scale(env_sel_month[env_variables_selected]))
 
 # extract sites
 env_pca_sites <- 
   scores(env_pca, scaling = 1)$sites %>% 
   as.data.frame() %>% 
-  cbind(env[c("Cruise", "Station")])
+  cbind(env_sel_month[c("Month", "Station")])
 
 # extract species (env var.)
 env_pca_species <- 
@@ -144,7 +156,7 @@ env_pca_plot <-
   ggplot() +
   # # plot ellipse
   # geom_polygon(data = env_pca_sites, 
-  #              aes(x = PC1, y = PC2, color = Cruise, fill = Cruise),
+  #              aes(x = PC1, y = PC2, color = Month, fill = Month),
   #              stat = "ellipse",
   #              size = 1.5,
   #              alpha = 0.3) +
@@ -159,15 +171,15 @@ env_pca_plot <-
             parse = TRUE) +
   # plot stations
   geom_point(data = env_pca_sites, 
-             aes(x = PC1, y = PC2, color = Cruise)) +
+             aes(x = PC1, y = PC2, color = Month)) +
   geom_label(data = env_pca_sites,#[-c(2:3),], 
-             aes(x = PC1, y = PC2, label = Station, color = Cruise)) +
+             aes(x = PC1, y = PC2, label = Station, color = Month)) +
   # geom_label_repel(data = env_all_pca_sites[c(2:3),],
-  #                  aes(x = PC1, y = PC2, label = Station, color = Cruise),
+  #                  aes(x = PC1, y = PC2, label = Station, color = Month),
   #                  min.segment.length = 0) +
   # change axis label
-  xlab(paste0("PC1 (", env_pca_eig[1], "% of total variance explained)")) +
-  ylab(paste0("PC2 (", env_pca_eig[2], "% of total variance explained)")) +
+  xlab(paste0("PC1 (", env_pca_eig[1], "% of the total variance)")) +
+  ylab(paste0("PC2 (", env_pca_eig[2], "% of the total variance)")) +
   scale_color_manual(values = cruise_color) +
   scale_fill_manual(values = cruise_color) +
   coord_fixed()+

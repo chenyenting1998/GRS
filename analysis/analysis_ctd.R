@@ -6,7 +6,7 @@
 
 # Author: Yen-Ting Chen
 # Date of creation: 2023/07/07
-# Date of last modification: 2023/07/07
+# Date of last modification: 2023/10/20
 
 #######################
 # Set up environment
@@ -26,7 +26,7 @@ library(GRSmacrofauna)  # data package
 plot_ctd_variable <- function(input, xx, yy) {
   ggplot(input, aes(.data[[xx]], .data[[yy]], color = - Pressure)) +
     geom_point() +
-    facet_grid(Cruise~Station, scales = "free") +
+    facet_grid(Month~Station, scales = "free") +
     theme_bw()
 }
 
@@ -34,19 +34,27 @@ plot_ctd_variable <- function(input, xx, yy) {
 load("data/cruise_color.RData")
 load("data/env_variables.RData")
 
+# add function
+add_month <- function(x){
+  x$Month <- if_else(x$Cruise == "OR1-1219", "March", "October")
+  return(x)
+}
+
 #####################
 # 1. Data preparation
 #####################
 # convert ctd to long format
 ctd_variables <- c("Temperature", "Salinity", "Density", "Oxygen", "Fluorescence", "Transmission")
+ctd_month <- add_month(ctd)
 ctd_long <-
-  ctd %>% 
+  ctd_month %>% 
   pivot_longer(cols = all_of(ctd_variables),
                names_to = "Variables",
                values_to = "Values")
+
 # Extract bottom water
 bottom_water <- 
-  ctd %>%
+  ctd_month %>%
   group_by(Cruise, Station) %>% 
   filter(Pressure == max(Pressure)) %>% 
   pivot_longer(cols = all_of(ctd_variables),
@@ -56,11 +64,11 @@ bottom_water <-
 ################################
 # 2. Plot variable relationships
 ################################
-sal_temp <- plot_ctd_variable(ctd, "Salinity", "Temperature")
-sal_dens <- plot_ctd_variable(ctd, "Salinity", "Density")
-sal_trans <- plot_ctd_variable(ctd, "Salinity", "Transmission")
-sal_fluo <- plot_ctd_variable(ctd, "Salinity", "Fluorescence")
-temp_Fluo <- plot_ctd_variable(ctd, "Temperature", "Fluorescence")
+sal_temp <- plot_ctd_variable(ctd_month, "Salinity", "Temperature")
+sal_dens <- plot_ctd_variable(ctd_month, "Salinity", "Density")
+sal_trans <- plot_ctd_variable(ctd_month, "Salinity", "Transmission")
+sal_fluo <- plot_ctd_variable(ctd_month, "Salinity", "Fluorescence")
+temp_Fluo <- plot_ctd_variable(ctd_month, "Temperature", "Fluorescence")
 
 # output
 ggsave("figure/ctd/ctd_sal_temp.png", scale = 1.2, plot = sal_temp)
@@ -79,8 +87,10 @@ names(station_color) <- paste0('S', 1:7)
 # plot profile
 ctd_facets <- 
   c(env_variables_names,
-    "OR1-1219" = "OR1-1219",
-    "OR1-1242" = "OR1-1242") 
+    "March" = "March",
+    "October" = "October")
+    # "OR1-1219" = "OR1-1219",
+    # "OR1-1242" = "OR1-1242") 
 ctd_profile <- 
   ggplot(ctd_long) +
   geom_line(aes(x = Pressure, y = Values, color = Station)) +
@@ -93,5 +103,6 @@ ctd_profile <-
   scale_x_reverse() +
   scale_color_manual(values = station_color) +
   theme_bw()
+
 save(ctd_profile, file = "data/ctd.RData")
 ggsave("figure/ctd/ctd_profile.png", scale = 1.4, plot = ctd_profile)

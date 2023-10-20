@@ -29,6 +29,11 @@ library(GRSmacrofauna)  # data package
 load("data/cruise_color.RData")
 load("data/env_variables.RData")
 
+add_month <- function(x){
+  x$Month <- if_else(x$Cruise == "OR1-1219", "March", "October")
+  return(x)
+}
+
 ###############################
 # 1. Oxygen utilization by core
 ###############################
@@ -75,8 +80,6 @@ ou_core <-
   relocate(In_situ_temperature, .after = Incub_temperature) %>%  
   relocate(Electrodes, .after = Tube)
 
-View(ou_core)
-
 # TOU
 ggplot(ou_core, aes(x = Station)) +
   geom_point(aes(y = Incub_TOU), color = "red") +
@@ -107,7 +110,8 @@ dou_station <-
             In_situ_DOU_mean = mean(In_situ_DOU),
             In_situ_DOU_sd = sd(In_situ_DOU),
             OPD_mean = mean(OPD),
-            OPD_sd = sd(OPD))
+            OPD_sd = sd(OPD)) %>% 
+  add_month()
 
 ou_station <-
   tou_t25 %>% 
@@ -119,7 +123,8 @@ ou_station <-
             Incub_TOU_mean = mean(Incub_TOU),
             Incub_TOU_sd = sd(Incub_TOU)) %>% 
   left_join(dou_station, 
-            by = c("Cruise", "Station"))
+            by = c("Cruise", "Station")) %>% 
+  add_month
 
 # station vs. TOU====
 plot_station_TOU <- function(object, mean, sd){
@@ -129,7 +134,7 @@ plot_station_TOU <- function(object, mean, sd){
                         y = .data[[mean]], 
                         ymax = .data[[mean]] + .data[[sd]], 
                         ymin = .data[[mean]] - .data[[sd]],
-                        color = Cruise),
+                        color = Month),
                     position = position_dodge(width = 0.5)) +
     scale_color_manual(values = cruise_color) +
     theme_bw()
@@ -148,10 +153,10 @@ plot_env_TOU <- function(object, mean, sd, x){
                         y = .data[[mean]], 
                         ymax = .data[[mean]] + .data[[sd]], 
                         ymin = .data[[mean]] - .data[[sd]],
-                        color = Cruise)) +
+                        color = Month)) +
     geom_text_repel(aes(x = .data[[x]], 
                         y = .data[[mean]], 
-                        color = Cruise,
+                        color = Month,
                         label = Station)) +
     scale_color_manual(values = cruise_color) +
     theme_bw()
@@ -174,7 +179,6 @@ plot_env_TOU(ou_station, "T25_TOU_mean", "T25_TOU_sd", "Temperature")
 ########
 # 2. DOU
 ########
-
 ou_station %>% 
   ggplot() +
   geom_pointrange(aes(x = Station, 
