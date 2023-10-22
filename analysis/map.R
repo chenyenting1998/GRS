@@ -120,6 +120,7 @@ st <-
   summarise(Latitude = mean(Latitude),
             Longitude = mean(Longitude)) 
 
+# scheme 1
 st$Month <- c("October",
               "October",
               "March & October",
@@ -128,6 +129,13 @@ st$Month <- c("October",
               "March & October",
               "March & October")
 
+st$Month <- c("October",
+              "October",
+              "Revisited",
+              "March",
+              "Revisited",
+              "Revisited",
+              "Revisited")
 # lats and longs of geographical names
 gr <- data.frame(Lo = 120.423960, La = 22.470504)
 gc <- data.frame(Lo = 120.22, La = 22.3)
