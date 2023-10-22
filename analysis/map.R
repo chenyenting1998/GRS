@@ -6,7 +6,7 @@
 
 # Author: Yen-Ting Chen
 # Date of creation: 2023/09/05
-# Date of last modification: 2023/10/20
+# Date of last modification: 2023/10/22
 
 #######################
 # Set up environment
@@ -34,6 +34,7 @@ x2 <- 123
 y1 <- 21
 y2 <- 26
 
+# subset bathy map
 bathy_map_sub <- 
   bathy_map %>% 
   filter(Longitude > x1 & Longitude < x2) %>% 
@@ -173,7 +174,7 @@ p1_fill <-
   # river mouth
   annotate(geom = "point", x = gr$Lo, y = gr$La, color = 'white', stroke = 1.2, shape = 1, size = 3) +
   annotate(geom = "segment", x = gr$Lo, y = gr$La, color = 'white',
-           xend = gr$Lo + 0.05, yend = gr$La + 0.07, size = 1) +
+           xend = gr$Lo + 0.05, yend = gr$La + 0.07, linewidth = 1) +
   annotate(geom = "text", x = gr$Lo + 0.05, y = gr$La + 0.11, color = 'white', label = "Gaoping\nRiver mouth") +
   # canyons
   annotate(geom = "text", x = gc$Lo, y = gc$La, color = "white", label = "Gaoping\nCanyon") +  
