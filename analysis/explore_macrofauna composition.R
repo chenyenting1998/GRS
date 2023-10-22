@@ -179,15 +179,28 @@ density_composition <-
   ylab(Density~(ind.~m^{-2})) +
   theme_bw()
 
+# library(ggtext)
+# library(glue)
+# st_color <- c("S1" = "#10BA55", 
+#               "S2" = "#10BA55",
+#               "S3" = "#DC3220",
+#               "S4" = "#0C7BDC",
+#               "S5" = "#DC3220",
+#               "S6" = "#DC3220",
+#               "S7" = "#DC3220")
+
 density_percentage_composition <-
   add_coarse_taxa(composition, match_file = rank_den, output = "Taxa") %>%
+  # mutate(color = st_color[match(Station, names(st_color))],
+  #        name = glue("<i style='color:{color}'>{Station}</i>")) %>% 
   ggplot(aes(x = Station, y = Count, fill = Taxa)) +
   geom_bar(position = "fill", stat = "identity") +
   facet_grid( ~ Month, scales = "free") +
   scale_fill_manual(values = taxa_den_color) +
   scale_y_continuous(labels = scales::percent) +
-  ylab(Density~("%")) +
-  theme_bw()
+  ylab(Density~("%")) + 
+  theme_bw() #+
+  # theme(axis.text.x  = element_markdown())
 
 ##############################
 # 3. Plot biomass composition
