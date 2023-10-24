@@ -58,6 +58,8 @@ track_subset <-
   filter(Latitude > y1 & Latitude < y2) %>% 
   mutate(Date = gsub("2019-", "", as.character(Date))) 
 
+color_gradient <- ocean.ice(50)
+
 ############
 # bathy map 
 ############
@@ -70,7 +72,7 @@ p_fill <-
   geom_raster(data = bathy_map_sub[bathy_map_sub$Elevation >= 0,], 
               aes(x = Longitude, y = Latitude), fill = "black") +
   # set bathymetry color
-  scale_fill_gradientn(colors = kovesi.linear_blue_5_95_c73(100),
+  scale_fill_gradientn(colors = color_gradient,
                        breaks = c(0, 1:8*(-1000)),
                        labels = abs)+
 
@@ -121,13 +123,13 @@ st <-
             Longitude = mean(Longitude)) 
 
 # scheme 1
-st$Month <- c("October",
-              "October",
-              "March & October",
-              "March",
-              "March & October",
-              "March & October",
-              "March & October")
+# st$Month <- c("October",
+#               "October",
+#               "March & October",
+#               "March",
+#               "March & October",
+#               "March & October",
+#               "March & October")
 
 st$Month <- c("October",
               "October",
@@ -155,11 +157,7 @@ p1_fill <-
                breaks = seq(-200, -1400, -200),
                size = 0.3,
                color = "black")+
-  # set bathymetry color
-  scale_fill_gradientn(colors = kovesi.linear_blue_5_95_c73(100),
-                       breaks = seq(0,-1400, -200),
-                       labels = abs,
-                       limits = c(-1400,0))+
+
   # add station points and stations
   geom_point(data = st, 
              aes(x = Longitude, 
@@ -172,13 +170,17 @@ p1_fill <-
                       y = Latitude,
                       color = Month,
                       label = Station),
-                  size = 5,
-                  seed = 0002300) +
+                  size = 5.5,
+                  seed = 300) +
   # set station color
   scale_color_manual(values = c("March" = "#0C7BDC",
                                 "October" = "#10BA55",
-                                "March & October" = "#DC3220")) +
-
+                                "Revisited" = "#DC3220")) +
+  # set bathymetry color
+  scale_fill_gradientn(colors = color_gradient,
+                       breaks = seq(0,-1400, -200),
+                       labels = abs,
+                       limits = c(-1400,0))+
   # river mouth
   annotate(geom = "point", x = gr$Lo, y = gr$La, color = 'white', stroke = 1.2, shape = 1, size = 3) +
   annotate(geom = "segment", x = gr$Lo, y = gr$La, color = 'white',
@@ -193,20 +195,17 @@ p1_fill <-
   ylab(Latitude~(degree*N))+
   coord_fixed(expand = FALSE) +
   labs(fill = "Depth (m)")+
+  guides(color = guide_legend(order = 1)) +
   theme_bw()
 
 ##############
 # Store output
 ##############
 map <- 
-  (p_fill + theme(legend.position = c(0.99,  0.99), 
-                  legend.justification=c(1, 1),
-                  legend.box = "horizontal",
-                  legend.key.size = unit(0.5, "cm"))) +
-  (p1_fill + theme(legend.position = c(0.99, 0.99), 
-                   legend.justification=c(1, 1),
-                   legend.box = "horizontal",
-                   legend.key.size = unit(0.5, "cm"))) +
+  (p_fill + 
+     theme(legend.position = c(0.99,  0.99),  legend.justification=c(1, 1), legend.box = "horizontal", legend.key.size = unit(0.5, "cm"))) +
+  (p1_fill + 
+     theme(legend.position = c(0.99, 0.99), legend.justification=c(1, 1), legend.box = "horizontal", legend.key.size = unit(0.5, "cm"))) +
   plot_annotation(tag_levels = "a",
                   tag_prefix = "(",
                   tag_suffix = ")")
