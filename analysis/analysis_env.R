@@ -6,7 +6,7 @@
 
 # Author: Yen-Ting Chen
 # Date of creation: Unknown
-# Date of last modification: 2023/10/20
+# Date of last modification: 2023/10/24
 
 #######################
 # Set up environment
@@ -23,12 +23,12 @@ library(ggplot2) # visualization
 library(GGally)
 library(ggrepel)
 library(writexl) # xlsx
-library(GRSmacrofauna)  # data package
+# library(GRSmacrofauna)  # data package
 
 # load variables
 load("data/cruise_color.RData")
 load("data/env_variables.RData")
-load("data/env_long.RData")
+load("data/env.RData")
 
 # add month
 add_month <- function(x){
@@ -66,7 +66,6 @@ env_selected <- env[,c(env_metadata, env_variables_selected)]
 #############
 env_pairplot <-
   env %>% 
-  add_month() %>% 
   ggpairs(columns = c(env_variables_spatial, env_variables_selected),
           aes(color = Month)) +
   scale_color_manual(values = cruise_color) +
@@ -88,7 +87,6 @@ wilcox_table <-
   pivot_longer(cols = all_of(env_variables), 
                names_to = "Variables", 
                values_to = "Values") %>% 
-  add_month() %>% 
   group_by(Variables) %>% 
   wilcox_test(Values ~ Month,
               comparisons = list(c("March", "October")))
@@ -106,19 +104,17 @@ write_xlsx(list(wilcox_table = wilcox_table,
 ###########################
 set.seed(10)
 # run permanova
-env_sel_month <- add_month(env_selected)
 env_permanova <- 
-  adonis2(scale(env_sel_month[env_variables_selected]) ~ Month,
-  # adonis2(scale(env_sel_month) ~ Month,
-          data = env_sel_month, 
+  adonis2(scale(env_selected[env_variables_selected]) ~ Month,
+          data = env_selected, 
           method = "euclidean",
           permutations = 9999)
 # run permdisp
 env_disp <-
-  betadisper(vegdist(env_sel_month[env_variables_selected],
+  betadisper(vegdist(env_selected[env_variables_selected],
                      method = "euclidean", scale = TRUE), 
-             group = env_sel_month$Month)
-# env_disp <- betadisper(vegdist(env_selected, method = "euclidean", scale = TRUE), group = env$Cruise)
+             group = env_selected$Month)
+
 env_permdisp <- permutest(env_disp, permutations = 9999)
 
 # output
@@ -131,13 +127,13 @@ write_xlsx(permanova_output,
 ##################################
 # 5. Principle coordinate analysis
 ##################################
-env_pca <- rda(scale(env_sel_month[env_variables_selected]))
+env_pca <- rda(scale(env_selected[env_variables_selected]))
 
 # extract sites
 env_pca_sites <- 
   scores(env_pca, scaling = 1)$sites %>% 
   as.data.frame() %>% 
-  cbind(env_sel_month[c("Month", "Station")])
+  cbind(env_selected[c("Month", "Station")])
 
 # extract species (env var.)
 env_pca_species <- 
@@ -154,12 +150,6 @@ env_pca_eig <-
 
 env_pca_plot <-
   ggplot() +
-  # # plot ellipse
-  # geom_polygon(data = env_pca_sites, 
-  #              aes(x = PC1, y = PC2, color = Month, fill = Month),
-  #              stat = "ellipse",
-  #              size = 1.5,
-  #              alpha = 0.3) +
   # plot variable segments
   geom_segment(data = env_pca_species,
                aes(x = PC1, y = PC2, xend = 0, yend = 0)) +
@@ -169,14 +159,13 @@ env_pca_plot <-
                 y = PC2 * 1.09, 
                 label = abbr),
             parse = TRUE) +
-  # plot stations
-  geom_point(data = env_pca_sites, 
-             aes(x = PC1, y = PC2, color = Month)) +
-  geom_label(data = env_pca_sites,#[-c(2:3),], 
-             aes(x = PC1, y = PC2, label = Station, color = Month)) +
-  # geom_label_repel(data = env_all_pca_sites[c(2:3),],
-  #                  aes(x = PC1, y = PC2, label = Station, color = Month),
-  #                  min.segment.length = 0) +
+  # plot march- and october-only stations
+  geom_text(data = env_pca_sites[env_pca_sites$Station %in% c("S1", "S2", "S4"),], 
+            aes(x = PC1, y = PC2, label = Station, color = Month),
+            size = 5) +
+  geom_label(data = env_pca_sites[env_pca_sites$Station %in% c("S3", "S5", "S6", "S7"),], 
+             aes(x = PC1, y = PC2, label = Station, color = Month),
+             size = 5, label.padding = unit(0.15, "lines")) +
   # change axis label
   xlab(paste0("PC1 (", env_pca_eig[1], "% of the total variance)")) +
   ylab(paste0("PC2 (", env_pca_eig[2], "% of the total variance)")) +
@@ -185,7 +174,7 @@ env_pca_plot <-
   coord_fixed()+
   theme_bw() +
   theme(legend.position = c(0.85,
-                            0.85))
+                            0.1))
 
 ggsave("figure/pca/env_pca_plot.png", 
        plot = env_pca_plot,
@@ -198,7 +187,7 @@ ggsave("figure/pca/env_pca_plot.png",
 ###########
 # add metadata to env_selected
 save(env_variables_selected, 
-     env_selected, 
+     env_selected,
      file = "data/env_selected.RData")
 
-save(env_pca, file = "data/env_pca.RData")
+save(env_pca, env_pca_sites, env_pca_species, env_pca_eig, env_pca_plot, file = "data/env_pca.RData")

@@ -6,7 +6,7 @@
 
 # Author: Yen-Ting Chen
 # Date of creation: 2023/07/05
-# Date of last modification: 2023/07/14
+# Date of last modification: 2023/10/24
 
 #####################
 # Set up environment
@@ -20,13 +20,14 @@ library(ggplot2)
 library(vegan)
 library(GGally)
 library(ggrepel)
-library(GRSmacrofauna)
+library(ggnewscale)
 library(writexl)
 
 # Load data
 load("data/taxa_rank.Rdata")
 load("data/taxa_color.Rdata")
 load("data/cruise_color.Rdata")
+load("data/env.Rdata")
 load("data/env_variables.Rdata")
 load("data/env_selected.Rdata")
 load("data/wide_data.Rdata")
@@ -43,14 +44,31 @@ add_month <- function(x){
   x$Month <- if_else(x$Cruise == "OR1-1219", "March", "October")
   return(x)
 }
+ord.rsquare <- 
+  function(fullmodel, backward_model){
+    data.frame(Model = c("Full model", "Backward selected"),
+               R.squared = c(RsquareAdj(fullmodel)$r.squared, 
+                             RsquareAdj(backward_model)$r.squared),
+               Adj.R.squared = c(RsquareAdj(fullmodel)$adj.r.squared, 
+                                 RsquareAdj(backward_model)$adj.r.squared))
+    
+  }
 
-###############################################
-# 1. Principal component analysis -- Count data
-###############################################
+
+# set up left_joining spatial data
+env_sp_metadata <- env[c("Month", "Station", "Depth", "DRM")]
+size_range = c(2, 5)
+size_depth_breaks <- c(30,50,70,90)
+size_drm_breaks = c(15, 20, 25)
+stretch = 0.2
+
+####################################################
+# 1. Principal component analysis -- Count data ####
+####################################################
 # Box-Cox-chord transformation
 count_chord <- 
   count_wide %>% 
-  select(-all_of(c("Cruise", "Month", "Station", "Deployment", "Tube"))) %>% 
+  select(-all_of(c("Month", "Station", "Deployment", "Tube"))) %>% 
   box.cox.chord(count_exp)
 
 # tb-PCA
@@ -60,16 +78,17 @@ summary(count_pca)
 # get output scaling = 1
 count_sc1 <- 
   get_pca_output(count_pca, 
-                 metadata = count_wide[1:5],
+                 metadata = left_join(count_wide[1:4], env_sp_metadata),
                  scaling = 1)
 # get output scaling = 2
 count_sc2 <- 
   get_pca_output(count_pca, 
-                 metadata = count_wide[1:5], 
+                 metadata = left_join(count_wide[1:4], env_sp_metadata),
                  scaling = 2)
 
 # plot PC eigenvalues
 count_pca_screeplot <- plot_scree(count_pca)
+
 # extract goodness species
 count_pca_goodness <- extract_goodness(count_pca, "CA")
 count_pca_goodness_plot <-
@@ -84,14 +103,15 @@ ggsave("figure/pca/count_pca_goodness_plot.png",
        width = 6,
        height = 5)
 
-# plot pca plots scaling = 1
+## plot pca plots scaling = 1 ####
 count_pca_sc1 <- 
   plot_pca(count_sc1$pca_sites, 
            count_sc1$pca_species, 
            scaling = 1, 
            eig_vector = count_sc1$pca_eig,
            stretch = 0.2)
-# plot pca plots scaling = 2
+
+## plot pca plots scaling = 2 ####
 count_pca_sc2 <- 
   plot_pca(count_sc2$pca_sites, 
            count_sc2$pca_species, 
@@ -99,9 +119,103 @@ count_pca_sc2 <-
            eig_vector = count_sc2$pca_eig, 
            stretch = 1)
 
+## plot pca_sc1 depth ####
+count_pca_sc1_depth <- 
+  ggplot() +
+  
+  # add v and hline
+  geom_vline(xintercept = 0, color = "black", size = .5, linetype = 2) +
+  geom_hline(yintercept = 0, color = "black", size = .5, linetype = 2) +
+  
+  # species
+  geom_segment(data = count_sc1$pca_species[count_sc1$pca_species$Show == TRUE,],
+               aes(x = 0, 
+                   y = 0,
+                   xend = PC1 * stretch, 
+                   yend = PC2 * stretch),
+               size = .4, 
+               color = "purple")+
+  geom_label(data = count_sc1$pca_species[count_sc1$pca_species$Show == TRUE,],
+             aes(x = PC1 * stretch, 
+                 y = PC2 * stretch, 
+                 label = Taxon),
+             size = 3,
+             color = "purple",
+             label.padding = unit(0.15, "lines")) +
+  # sites
+  geom_point(data = count_sc1$pca_sites,
+             aes(x = PC1,
+                 y = PC2,
+                 color = Month,
+                 size = Depth)) +
+  scale_size_binned("Depth (m)", range = size_range + 1.5, breaks = size_depth_breaks) +
+  new_scale("size") +
+  geom_text(data = count_sc1$pca_sites,
+            aes(x = PC1,
+                y = PC2,
+                color = Month,
+                size = Depth,
+                label = Station),
+            color = "white") +
+  scale_size_binned("Depth (m)", range = size_range - 1.5, breaks = size_depth_breaks) +
+  # change axis label
+  xlab(paste0("PC1 (", count_sc1$pca_eig[1], "% of the total variance)")) +
+  ylab(paste0("PC2 (", count_sc1$pca_eig[2], "% of the total variance)")) +
+  scale_color_manual(values = cruise_color) +
+  scale_fill_manual(values = cruise_color) +
+  coord_fixed() +
+  theme_bw()
+
+## plot pca sc1 DRM ####
+count_pca_sc1_drm <- 
+  ggplot() +
+  
+  # add v and hline
+  geom_vline(xintercept = 0, color = "black", size = .5, linetype = 2) +
+  geom_hline(yintercept = 0, color = "black", size = .5, linetype = 2) +
+  
+  # species
+  geom_segment(data = count_sc1$pca_species[count_sc1$pca_species$Show == TRUE,],
+               aes(x = 0, 
+                   y = 0,
+                   xend = PC1 * stretch, 
+                   yend = PC2 * stretch),
+               size = .4, 
+               color = "purple")+
+  geom_label(data = count_sc1$pca_species[count_sc1$pca_species$Show == TRUE,],
+             aes(x = PC1 * stretch, 
+                 y = PC2 * stretch, 
+                 label = Taxon),
+             size = 3,
+             color = "purple",
+             label.padding = unit(0.15, "lines")) +
+  # sites
+  geom_point(data = count_sc1$pca_sites,
+             aes(x = PC1,
+                 y = PC2,
+                 color = Month,
+                 size = DRM)) +
+  scale_size_binned("DRM (km)", range = size_range + 1.5, breaks = size_drm_breaks) +
+  new_scale("size") +
+  geom_text(data = count_sc1$pca_sites,
+            aes(x = PC1,
+                y = PC2,
+                label = Station,
+                size = DRM),
+            color = "white") +
+  scale_size_binned("DRM (km)", range = size_range - 1.5, breaks = size_drm_breaks) +
+  # change axis label
+  xlab(paste0("PC1 (", count_sc1$pca_eig[1], "% of the total variance)")) +
+  ylab(paste0("PC2 (", count_sc1$pca_eig[2], "% of the total variance)")) +
+  scale_color_manual(values = cruise_color) +
+  scale_fill_manual(values = cruise_color) +
+  coord_fixed() +
+  theme_bw()
+
 # output
 ggsave(filename = "figure/pca/count_pca_screeplot.png", 
        plot = count_pca_screeplot, scale = 1.5)
+
 ggsave(filename = "figure/pca/count_pca_sc1.png", 
        plot = count_pca_sc1,
        scale = 1,
@@ -114,18 +228,29 @@ ggsave(filename = "figure/pca/count_pca_sc2.png",
        width = 8,
        height = 6)
 
+ggsave(filename = "figure/pca/count_pca_sc1_depth.png", 
+       plot = count_pca_sc1_depth, 
+       scale = 1,
+       width = 8,
+       height = 6)
 
-####################################
-# 3. PERMANOVA and PERMDISP -- Count
-####################################
+ggsave(filename = "figure/pca/count_pca_sc1_drm.png", 
+       plot = count_pca_sc1_drm, 
+       scale = 1,
+       width = 8,
+       height = 6)
+
+
+#########################################
+# 3. PERMANOVA and PERMDISP -- Count ####
+#########################################
 # sp
-env_sp <- env[, c("Cruise", "Station", env_variables_spatial)]
+env_sp <- env[, c("Month", "Station", env_variables_spatial)]
 env_sp$Depth <- scale(env_sp$Depth)
 env_sp$DRM <- scale(env_sp$DRM)
-env_sp <- add_month(env_sp)
 data_temp <- left_join(count_wide, env_sp)
 
-# permanova
+## permanova ####
 set.seed(14)
 count_permanova <- 
   adonis2(count_chord ~ Depth * DRM  + Depth * Month + DRM * Month,
@@ -136,9 +261,9 @@ count_permanova <-
 write_xlsx(list(PERMANOVA = cbind(" " = rownames(count_permanova), count_permanova)),
            path = "table/permanova/count_permanova.xlsx")
 
-################################################
-# 4. Canonical redundancy analysis -- Count data
-################################################
+#####################################################
+# 4. Canonical redundancy analysis -- Count data ####
+#####################################################
 # match env_selected data.frame with count_wide
 env_selected_expand <- 
   left_join(count_wide, env_selected) %>% 
@@ -175,7 +300,7 @@ ordiresids(count_rda_back)
 count_rda_for_goodness <- extract_goodness(count_rda_back, "CCA")
 count_rda_for_goodness_plot <-
   ggplot(count_rda_for_goodness) +
-  geom_point(aes(x = RDA2, 
+  geom_point(aes(x = RDA5, 
                  y = Taxon)) +
   xlab("Cummulative variance explained to RDA2") +
   theme_bw()
@@ -192,15 +317,15 @@ count_rda_axis <- anova.cca(count_rda_back, by = "axis", permutations = 9999)
 # first two rda axises are sig.
 count_rda_margin <- anova.cca(count_rda_back, by = "margin", permutations = 9999)
 # all variables are sig.
-write_xlsx(list(count_rda_axis = cbind(" " = rownames(count_rda_axis), count_rda_axis),
+write_xlsx(list(count_rda_statistics = ord.rsquare(count_rda_full, count_rda_back),
+                count_rda_axis = cbind(" " = rownames(count_rda_axis), count_rda_axis),
                 count_rda_margin = cbind(" " = rownames(count_rda_margin), count_rda_margin)),
            path = "table/rda/count_rda_anova.xlsx")
 
-# 
-# scaling = 1 
+## scaling = 1 ####
 count_rda_output_sc1 <- 
   get_rda_output(count_rda_back, 
-                 count_wide[1:5], 
+                 left_join(count_wide[1:4], env_sp_metadata),
                  env_variables_abbr,
                  scaling = 1)
 count_rda_plot_sc1 <- 
@@ -216,10 +341,10 @@ ggsave("figure/rda/count_rda_plot_sc1.png",
        width = 8,
        height = 6)
 
-# scaling = 2
+## scaling = 2 ####
 count_rda_output_sc2 <- 
   get_rda_output(count_rda_back, 
-                 count_wide[1:5], 
+                 left_join(count_wide[1:4], env_sp_metadata),
                  env_variables_abbr,
                  scaling = 2)
 count_rda_plot_sc2 <- 
@@ -234,5 +359,121 @@ ggsave("figure/rda/count_rda_plot_sc2.png",
        width = 8,
        height = 6)
 
-save(count_pca_sc1, count_rda_plot_sc1, file = "data/count_ord_sc1.RData")
+## count_rda_plot_sc1_depth ####
+count_rda_plot_sc1_depth <- 
+  ggplot() +
+  # add v and hline
+  geom_vline(xintercept = 0, color = "black", size = .5, linetype = 2) +
+  geom_hline(yintercept = 0, color = "black", size = .5, linetype = 2) +
+  
+  # # plot env
+  geom_segment(data = count_rda_output_sc1$rda_env,
+               aes(x = 0, y = 0, xend = RDA1, yend = RDA2),
+               arrow = arrow(angle = 0),
+               size = .5, color = "black")+
+  geom_text(data = count_rda_output_sc1$rda_env,
+            aes(x = RDA1 * 1.1, y = RDA2 * 1.1, label = abbr),
+            size = 3,
+            parse = TRUE) +
+  # species vectors
+  geom_segment(data = count_rda_output_sc1$rda_species[count_rda_output_sc1$rda_species$Show == TRUE,],
+               aes(x = 0, y = 0, xend = RDA1 * stretch, yend = RDA2 * stretch),
+               arrow = arrow(angle = 0),
+               size = .5, 
+               color = "purple")+
+  geom_label(data = count_rda_output_sc1$rda_species[count_rda_output_sc1$rda_species$Show == TRUE,], 
+             aes(x = RDA1 * stretch, y = RDA2 * stretch, label = Taxon),
+             size = 3,
+             color = "purple",
+             label.padding = unit(0.15, "lines")) +   
+  # plot stations
+  geom_point(data = count_rda_output_sc1$rda_sites,
+             aes(x = RDA1,
+                 y = RDA2,
+                 color = Month,
+                 size = Depth)) +
+  scale_size_binned("Depth (m)", range = size_range + 1.5, breaks = size_depth_breaks) +
+  new_scale("size") +
+  geom_text(data = count_rda_output_sc1$rda_sites,
+            aes(x = RDA1,
+                y = RDA2,
+                label = Station,
+                size = Depth),
+            color = "white") +
+  scale_size_binned("Depth (m)", range = size_range - 1.5, breaks = size_depth_breaks) +
+  
+  # add R2
+  xlab(paste0("RDA1 (", rda_eig_percent(count_rda_back)[1], "% of the total variance)")) +
+  ylab(paste0("RDA2 (", rda_eig_percent(count_rda_back)[2], "% of the total variance)")) +
+  scale_color_manual(values = cruise_color) +
+  coord_fixed() +
+  theme_bw()
+
+ggsave("figure/rda/count_rda_plot_sc1_depth.png", 
+       plot = count_rda_plot_sc1_depth, 
+       scale = 1,
+       width = 8,
+       height = 6)
+
+## count_rda_plot_sc1_drm ####
+count_rda_plot_sc1_drm <- 
+  ggplot() +
+  # add v and hline
+  geom_vline(xintercept = 0, color = "black", size = .5, linetype = 2) +
+  geom_hline(yintercept = 0, color = "black", size = .5, linetype = 2) +
+  
+  # # plot env
+  geom_segment(data = count_rda_output_sc1$rda_env,
+               aes(x = 0, y = 0, xend = RDA1, yend = RDA2),
+               arrow = arrow(angle = 0),
+               size = .5, color = "black")+
+  geom_text(data = count_rda_output_sc1$rda_env,
+            aes(x = RDA1 * 1.1, y = RDA2 * 1.1, label = abbr),
+            size = 3,
+            parse = TRUE) +
+  # species vectors
+  geom_segment(data = count_rda_output_sc1$rda_species[count_rda_output_sc1$rda_species$Show == TRUE,],
+               aes(x = 0, y = 0, xend = RDA1 * stretch, yend = RDA2 * stretch),
+               arrow = arrow(angle = 0),
+               size = .5, 
+               color = "purple")+
+  geom_label(data = count_rda_output_sc1$rda_species[count_rda_output_sc1$rda_species$Show == TRUE,], 
+             aes(x = RDA1 * stretch, y = RDA2 * stretch, label = Taxon),
+             size = 3,
+             color = "purple",
+             label.padding = unit(0.15, "lines")) +   
+  # plot stations
+  geom_point(data = count_rda_output_sc1$rda_sites,
+             aes(x = RDA1,
+                 y = RDA2,
+                 color = Month,
+                 size = DRM)) +
+  scale_size_binned("DRM (km)", range = size_range + 1.5, breaks = size_drm_breaks) +
+  new_scale("size") +
+  geom_text(data = count_rda_output_sc1$rda_sites,
+            aes(x = RDA1,
+                y = RDA2,
+                label = Station,
+                size = DRM),
+            color = "white") +
+  scale_size_binned("DRM (km)", range = size_range - 1.5, breaks = size_drm_breaks) +
+  
+  # add R2
+  xlab(paste0("RDA1 (", rda_eig_percent(count_rda_back)[1], "% of the total variance)")) +
+  ylab(paste0("RDA2 (", rda_eig_percent(count_rda_back)[2], "% of the total variance)")) +
+  scale_color_manual(values = cruise_color) +
+  coord_fixed() +
+  theme_bw()
+
+ggsave("figure/rda/count_rda_plot_sc1_drm.png", 
+       plot = count_rda_plot_sc1_drm, 
+       scale = 1,
+       width = 8,
+       height = 6)
+
+save(count_pca_sc1, count_pca_sc2, 
+     count_pca_sc1_depth, count_rda_plot_sc1_drm, 
+     count_rda_plot_sc1,
+     count_rda_plot_sc1_drm, count_rda_plot_sc1_depth,
+     file = "data/count_ord_sc1.RData")
 

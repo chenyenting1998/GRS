@@ -39,6 +39,14 @@ add_month <- function(x){
 ####################
 # 1. Save data table
 ####################
+env <- 
+  env %>% 
+  ungroup() %>% 
+  add_month() %>% 
+  relocate(Month, .after = Cruise) %>% 
+  mutate(Cruise = NULL,
+         Habitat = NULL)
+
 write_xlsx(list(env = env),
            "table/env.xlsx")
 
@@ -48,13 +56,11 @@ write_xlsx(list(env = env),
 # env long
 env_long <- 
   env %>% 
-  filter(!Station %in% c("GC1", "GS1")) %>% 
   pivot_longer(cols = all_of(env_variables),
                names_to = "Variables",
-               values_to = "Values") %>% 
-  add_month()
+               values_to = "Values") 
 
-save(env_long, file = "data/env_long.RData")
+save(env, env_long, file = "data/env.RData")
 
 ###########################
 # 2. Quantile-Quantile plot
@@ -64,7 +70,6 @@ env_qqplot <-
   geom_qq()+
   geom_qq_line()+
   facet_wrap(~Variables, scales = "free") +
-  scale_color_manual(values = cruise_color) +
   theme_bw()
 
 ggsave("figure/qqplot/env_qqplot.png", scale = 1.5, plot = env_qqplot)
@@ -112,7 +117,6 @@ write_xlsx(list(corr_table = env_corr_table,
                 corr_table_rounded = env_corr_table_rounded),
            "table/corr/env_corr.xlsx")
 
-
 ############
 # 4. Boxplot
 ############
@@ -146,8 +150,7 @@ env_pca <- rda(scale(env[,env_variables]))
 env_pca_sites <- 
   scores(env_pca, scaling = 1)$sites %>% 
   as.data.frame() %>% 
-  cbind(env[c("Cruise", "Station")]) %>% 
-  add_month()
+  cbind(env[c("Month", "Station")]) 
 
 # extract species (env var.)
 env_pca_species <- 

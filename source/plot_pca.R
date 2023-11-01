@@ -59,12 +59,9 @@ plot_pca <-
                        y = PC2 * stretch, 
                        label = Taxon),
                    size = 3,
-                   color = "purple") +
+                   color = "purple",
+                   label.padding = unit(0.15, "lines")) +
         # plot stations
-        # geom_point(data = sites, 
-        #            aes(x = PC1, 
-        #                y = PC2, 
-        #                color = Cruise)) +
         geom_text(data = sites,
                   aes(x = PC1,
                       y = PC2,
@@ -100,7 +97,8 @@ plot_pca <-
                        y = PC2 * stretch, 
                        label = Taxon),
                    size = 3,
-                   color = "purple") +
+                   color = "purple",
+                   label.padding = unit(0.15, "lines")) +
         
         # plot stations
         geom_text(data = sites,
@@ -108,7 +106,7 @@ plot_pca <-
                       y = PC2,
                       color = Month,
                       label = Station),
-                  size = 2.5) +        
+                  size = 2.5) +
         # change axis label
         xlab(paste0("PC1 (", eig_vector[1], "% of the total variance)")) +
         ylab(paste0("PC2 (", eig_vector[2], "% of the total variance)")) +

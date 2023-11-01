@@ -42,7 +42,7 @@ plot_taxa_boxplot <- function(data,
   data_preped <- 
     data %>% 
     ungroup() %>% 
-    select(- Cruise, - Month, - Station, - Deployment, - Tube)
+    select(- Month, - Station, - Deployment, - Tube)
   # take exp
   data_preped <- data_preped^exp
   # convert to long data
@@ -79,7 +79,7 @@ plot_taxa_den <- function(data,
   data_preped <- 
     data %>% 
     ungroup() %>% 
-    select(- Cruise, - Month, - Station, - Deployment, - Tube)
+    select(- Month, - Station, - Deployment, - Tube)
   
   # take the exp
   data_preped <- data_preped^exp
@@ -137,7 +137,8 @@ unique(x$Taxon)  # 27 taxa
 # percentage
 count_per_table <-
   x %>% 
-  group_by(Cruise, Station, Taxon) %>% 
+  add_month() %>% 
+  group_by(Month, Station, Taxon) %>% 
   summarise(Count_sum = n()) %>% 
   mutate(Count_per = round(Count_sum/ sum(Count_sum) * 100, 2)) %>% 
   select(-Count_sum) %>%
@@ -147,7 +148,8 @@ count_per_table <-
 
 WM_per_table <-
   x %>% 
-  group_by(Cruise, Station, Taxon) %>% 
+  add_month() %>% 
+  group_by(Month, Station, Taxon) %>% 
   summarise(WM_sum = sum(WM)) %>% 
   mutate(WM_per = round(WM_sum / sum(WM_sum) * 100, 2)) %>% 
   select(-WM_sum) %>%
@@ -158,14 +160,19 @@ WM_per_table <-
 # composition
 composition <- 
   x %>%
-  group_by(Cruise, Station, Deployment, Tube, Taxon) %>% 
+  add_month() %>% 
+  group_by(Month, Station, Deployment, Tube, Taxon) %>% 
   summarise(Count = n(),
-            Biomass = sum(WM)) %>% 
-  add_month()
+            Biomass = sum(WM))
 
 ##############################
 # 2. Plot density composition
 ##############################
+# essential data for highlighting reivsited stations
+revisited <- 
+  data.frame(Station = c("S3", "S5", "S6", "S7"))
+
+# actual density
 density_composition <-
   add_coarse_taxa(composition, match_file = rank_den, output = "Taxa") %>%
   ggplot(aes(
@@ -179,32 +186,23 @@ density_composition <-
   ylab(Density~(ind.~m^{-2})) +
   theme_bw()
 
-# library(ggtext)
-# library(glue)
-# st_color <- c("S1" = "#10BA55", 
-#               "S2" = "#10BA55",
-#               "S3" = "#DC3220",
-#               "S4" = "#0C7BDC",
-#               "S5" = "#DC3220",
-#               "S6" = "#DC3220",
-#               "S7" = "#DC3220")
-
+# percentage
 density_percentage_composition <-
   add_coarse_taxa(composition, match_file = rank_den, output = "Taxa") %>%
-  # mutate(color = st_color[match(Station, names(st_color))],
-  #        name = glue("<i style='color:{color}'>{Station}</i>")) %>% 
-  ggplot(aes(x = Station, y = Count, fill = Taxa)) +
-  geom_bar(position = "fill", stat = "identity") +
-  facet_grid( ~ Month, scales = "free") +
+  ggplot() +
+  geom_bar(aes(x = Station, y = Count, fill = Taxa), position = "fill", stat = "identity") +
+  # adding red brackets to revisited stations
+  # geom_tile(data = revisited, aes(x = Station, y = .5), color = "red", alpha = 0, linewidth = 1.5) +
+  facet_grid(Month ~ ., scales = "free", switch = "y") +
   scale_fill_manual(values = taxa_den_color) +
-  scale_y_continuous(labels = scales::percent) +
+  scale_y_continuous(labels = scales::percent, position = "right") +
   ylab(Density~("%")) + 
-  theme_bw() #+
-  # theme(axis.text.x  = element_markdown())
+  theme_bw() 
 
 ##############################
 # 3. Plot biomass composition
 ##############################
+# actual wet mass
 biomass_composition <-
   add_coarse_taxa(composition, match_file = rank_bio, output = "Taxa") %>%
   ggplot(aes(
@@ -218,15 +216,20 @@ biomass_composition <-
   ylab(Wet ~ mass ~ (g~m ^ {-2})) +
   theme_bw()
 
+# percentage wet mass
 biomass_percentage_composition <- 
   add_coarse_taxa(composition, match_file = rank_bio, output = "Taxa") %>% 
-  ggplot(aes(x = Station, y = Biomass, fill = Taxa)) +
-  geom_bar(position = "fill", stat = "identity") +
-  facet_grid(~Month, scales = "free") +
+  ggplot() +
+  geom_bar(aes(x = Station, y = Biomass, fill = Taxa), position = "fill", stat = "identity") +
+  # adding red brackets to revisited stations
+  # geom_tile(data = revisited, aes(x = Station, y = .5), color = "red", alpha = 0, linewidth = 1.5) +
+  facet_grid(Month ~ ., scales = "free", switch = "y") +
   scale_fill_manual(values = taxa_bio_color)+
-  scale_y_continuous(labels = scales::percent) +
+  scale_y_continuous(labels = scales::percent, position = "right") +
   ylab(Wet~mass~("%")) +
   theme_bw()
+
+# density_percentage_composition - biomass_percentage_composition
 
 ######################
 # 4. Render wide data
@@ -250,7 +253,7 @@ biomass_wide <-
 #############
 count_heatmap <-
   count_wide %>% 
-  pivot_longer(cols = -(1:5), names_to = "Taxon", values_to = "Count") %>% 
+  pivot_longer(cols = -(1:4), names_to = "Taxon", values_to = "Count") %>% 
   ggplot() +
   geom_tile(aes(x = Station, y = factor(Taxon, rev(rank_den$Taxon)), fill = log10(Count + 1))) +
   viridis::scale_fill_viridis() +
@@ -260,7 +263,7 @@ count_heatmap <-
 
 biomass_heatmap <- 
   biomass_wide %>% 
-  pivot_longer(cols = -(1:5), names_to = "Taxon", values_to = "Biomass") %>% 
+  pivot_longer(cols = -(1:4), names_to = "Taxon", values_to = "Biomass") %>% 
   ggplot() +
   geom_tile(aes(x = Station, y = factor(Taxon, rev(rank_bio$Taxon)), fill = log10(Biomass + 1))) +
   viridis::scale_fill_viridis() +
@@ -274,8 +277,13 @@ biomass_heatmap <-
 # yield Box-Cox-chord transformation results
 # Note that n < 3*p, Dagnelie's Test too liberal 
 # if p > 0.05, the Dagnelie's test result is trustworthy
-count_BCD <- as.data.frame(BCD(count_wide[-(1:5)])) # exp = 0.3
-biomass_BCD <- as.data.frame(BCD(biomass_wide[-(1:5)])) # exp = 0.1
+count_BCD <- as.data.frame(BCD(count_wide[-(1:4)])) # exp = 0.3
+biomass_BCD <- as.data.frame(BCD(biomass_wide[-(1:4)])) # exp = 0.1
+
+# plot
+plot(count_BCD$BC.exp, count_BCD$`BC.chord_p-val`)
+plot(biomass_BCD$BC.exp, biomass_BCD$`BC.chord_p-val`)
+# write xl
 write_xlsx(count_BCD, path = "table/BCc/count_BCD.xlsx")
 write_xlsx(biomass_BCD, path = "table/BCc/biomass_BCD.xlsx")
 
@@ -288,7 +296,7 @@ biomass_exp <- 0.1
 ##########
 # wide data transformed following Anderson et al.(2006)
 # plot the frequency of # of individuals by each taxa (i.e., matrix entries)
-hist(as.vector(as.matrix(count_wide[-c(1:5)])),
+hist(as.vector(as.matrix(count_wide[-c(1:4)])),
      main = "Histogram of taxa count",
      xlab = "Number of individuals")
 
@@ -304,6 +312,7 @@ biomass_taxa_boxplot <- plot_taxa_boxplot(biomass_wide, "Biomass", exp = biomass
 # Data output
 ##############
 save(composition, file = "data/macrofauna composition.RData")
+save(density_percentage_composition, biomass_percentage_composition, file = "data/composition_figure.RData")
 save(count_wide, biomass_wide, file = "data/wide_data.Rdata")
 save(count_exp, biomass_exp, file = "data/BC_exp.Rdata")
 

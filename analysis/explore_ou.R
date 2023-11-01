@@ -6,7 +6,7 @@
 
 # Author: Yen-Ting Chen
 # Date of creation: 2023/07/15
-# Date of last modification: 2023/07/15
+# Date of last modification: 2023/10/24
 
 #######################
 # Set up environment
@@ -37,7 +37,6 @@ add_month <- function(x){
 ###############################
 # 1. Oxygen utilization by core
 ###############################
-
 range(tou$Incub_temperature) # 20.79450 26.08633
 range(tou$In_situ_temperature) # 23.68867 28.14290
 mean(tou$Incub_temperature) # 23.33776
@@ -46,6 +45,8 @@ mean(tou$In_situ_temperature) # 25.89264
 # q10 equation: q10 = (r2/r1)^(10/(t2-t1)); t2 > t1
 # rearrange 1: r1 = r2 / (q10^[(t2-t1)/10])
 # rearrange 2: r2 = r1 * q10^(t2-t1)/10)
+
+# test on whether Q10 adjustment affects significantly
 T25 <- 25
 q10 <- 2
 
@@ -78,14 +79,15 @@ ou_core <-
   left_join(dou_core) %>% 
   relocate(Date, .before = Station) %>% 
   relocate(In_situ_temperature, .after = Incub_temperature) %>%  
-  relocate(Electrodes, .after = Tube)
+  relocate(Electrodes, .after = Tube) %>% 
+  add_month()
 
 # TOU
 ggplot(ou_core, aes(x = Station)) +
   geom_point(aes(y = Incub_TOU), color = "red") +
   geom_point(aes(y = T25_TOU), color = "green") +
   geom_point(aes(y = In_situ_TOU), color = "blue") +
-  facet_grid(~Cruise, scales = "free") +
+  facet_grid(~Month, scales = "free") +
   ylab("TOU") +
   theme_bw()
 
@@ -94,7 +96,7 @@ ggplot(ou_core, aes(x = Station)) +
   geom_point(aes(y = Incub_DOU_mean), color = "red") +
   geom_point(aes(y = T25_DOU_mean), color = "green") +
   geom_point(aes(y = In_situ_DOU_mean), color = "blue") +
-  facet_grid(~Cruise, scales = "free") +
+  facet_grid(~Month, scales = "free") +
   ylab("TOU") +
   theme_bw()
 
@@ -124,7 +126,7 @@ ou_station <-
             Incub_TOU_sd = sd(Incub_TOU)) %>% 
   left_join(dou_station, 
             by = c("Cruise", "Station")) %>% 
-  add_month
+  add_month()
 
 # station vs. TOU====
 plot_station_TOU <- function(object, mean, sd){
@@ -189,6 +191,29 @@ ou_station %>%
   scale_color_manual(values = cruise_color) +
   theme_bw()
 
+##############
+# 3. save data
+##############
+# There were no huge visual differences in using T25 and TOU
+# DOU did not contribute significantly to the TOU, causing high correlation between TOU and BOU
+# Decide not to add DOU in the current analysis
 
+# re-subset ou_core and ou_station
+
+ou_core <-
+  tou %>% 
+  add_month() %>% 
+  relocate(Month, .after = Cruise) %>% 
+  mutate(Cruise = NULL,
+         Habitat = NULL)
+
+ou_station <-
+  ou_core %>% 
+  group_by(Month, Station) %>% 
+  summarise(In_situ_TOU_mean = mean(In_situ_TOU),
+            In_situ_TOU_sd = sd(In_situ_TOU),
+            Incub_TOU_mean = mean(Incub_TOU),
+            Incub_TOU_sd = sd(Incub_TOU)) %>% 
+  ungroup()
 
 save(ou_station, ou_core, file = "data/ou.Rdata")

@@ -18,7 +18,7 @@ rm(list = ls())
 # 1. Define objects
 ###################
 # define env metadata and variables
-env_metadata <- c("Cruise", "Habitat", "Station", "Date", "Latitude", "Longitude")
+env_metadata <- c("Month", "Station", "Date", "Latitude", "Longitude")
 env_variables_spatial <- c("Depth", "DRM")
 env_variables <- 
   c("Depth", "DRM", "Temperature", "Salinity", "SigmaTheta", 

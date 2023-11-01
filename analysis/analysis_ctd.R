@@ -6,7 +6,7 @@
 
 # Author: Yen-Ting Chen
 # Date of creation: 2023/07/07
-# Date of last modification: 2023/10/20
+# Date of last modification: 2023/10/24
 
 #######################
 # Set up environment
@@ -89,20 +89,20 @@ ctd_facets <-
   c(env_variables_names,
     "March" = "March",
     "October" = "October")
-    # "OR1-1219" = "OR1-1219",
-    # "OR1-1242" = "OR1-1242") 
+
 ctd_profile <- 
   ggplot(ctd_long) +
   geom_line(aes(x = Pressure, y = Values, color = Station)) +
   geom_point(data = bottom_water, 
              aes(x = Pressure, y = Values, color = Station)) +
-  facet_grid(Cruise ~ factor(Variables, ctd_variables), 
+  facet_grid(Month ~ factor(Variables, ctd_variables), 
              labeller = as_labeller(ctd_facets, label_parsed),
-             scales = "free") +
-  coord_flip()+
-  scale_x_reverse() +
+             scales = "free",
+             switch = "y") +
   scale_color_manual(values = station_color) +
+  scale_x_continuous(position = "top", trans = "reverse") +
+  coord_flip()+
   theme_bw()
 
-save(ctd_profile, file = "data/ctd.RData")
+save(ctd_profile, ctd_variables, file = "data/ctd.RData")
 ggsave("figure/ctd/ctd_profile.png", scale = 1.4, plot = ctd_profile)

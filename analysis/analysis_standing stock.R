@@ -25,12 +25,12 @@ library(ggplot2)
 library(GGally)
 library(ggrepel)
 library(patchwork)
-library(GRSmacrofauna)
 library(writexl)
 
 # Load data
 load("data/macrofauna composition.Rdata")
 load("data/cruise_color.Rdata") 
+load("data/env.Rdata")
 load("data/env_variables.Rdata")
 load("data/env_selected.Rdata")
 
@@ -45,7 +45,7 @@ plot_ss <- function(object, x, y, sd, text_repel = FALSE){
                y = .data[[y]], 
                ymin = .data[[y]] - .data[[sd]], 
                ymax = .data[[y]] + .data[[sd]],
-               color = Cruise)) +
+               color = Month)) +
     geom_pointrange(position = position_dodge(width = .5))
   
   if(text_repel == TRUE){
@@ -55,7 +55,7 @@ plot_ss <- function(object, x, y, sd, text_repel = FALSE){
                       aes(x = .data[[x]],
                           y = .data[[y]],
                           label = Station,
-                          color = Cruise),
+                          color = Month),
                       seed = 10)
   }
   plot <- 
@@ -76,7 +76,7 @@ mc_area <- (0.1 / 2) ^ 2 * pi
 ###############################################
 ss_core <-
   composition %>%
-  group_by(Cruise, Station, Deployment, Tube) %>%
+  group_by(Month, Station, Deployment, Tube) %>%
   summarise(
     Abundance = sum(Count) / mc_area,
     Biomass = sum(Biomass) / 1000 / mc_area) %>%  # mg to g
@@ -85,7 +85,7 @@ ss_core <-
 # output .xlsx table
 ss_station <-
   ss_core %>% 
-  group_by(Cruise, Station) %>%  
+  group_by(Month, Station) %>%  
   # get the mean and sd of abundance and biomass of each station
   summarise(Abundance_mean = mean(Abundance),
             Abundance_sd = sd(Abundance),
@@ -111,7 +111,7 @@ ss_plot_data <-
   pivot_longer(cols = c("Abundance", "Biomass"),
               names_to = "Variable",
               values_to = "Value") %>%
-  group_by(Cruise, Station, Variable) %>%
+  group_by(Month, Station, Variable) %>%
   summarise(mean = mean(Value),
             sd = sd(Value)) %>%
   left_join(env) %>% 
@@ -140,7 +140,7 @@ ggsave("figure/standing_stock_drm_depth.png",
 # extract spatiotemporal data.frame
 sp <- 
   env %>% 
-  select(Cruise, Station, Depth, DRM) 
+  select(Month, Station, Depth, DRM) 
 
 # scale Depth and DRM
 sp$Depth <- (sp$Depth - mean(sp$Depth)) / sd(sp$Depth)
@@ -160,17 +160,14 @@ ss_sp <- left_join(ss_core, sp)
 #    Cruise:Depth : shallower waters might be more abu. before flood season.
 #    Cruise:DRM   : closer waters might be more abu. before flood season.
 
-# Three-way interaction:
-#    Cruise:DRM:Depth : The interaction between water depth and distance varies at flood season.
-
 #############
 # Abundance #
 #############
 abu_sp_fullmodel <- 
   lm(log10(Abundance) ~
        DRM * Depth + 
-       DRM * Cruise +
-       Depth * Cruise,
+       DRM * Month +
+       Depth * Month,
      data = ss_sp,
      na.action = "na.fail")
 
@@ -203,8 +200,8 @@ get_model.avg_results(abu_sp_avg, "table/model.avg/abu_sp_model.avg.xlsx")
 bio_sp_fullmodel <- 
   lm(log10(Biomass) ~
        DRM * Depth + 
-       DRM * Cruise + 
-       Depth * Cruise, 
+       DRM * Month + 
+       Depth * Month, 
      data = ss_sp,
      na.action = "na.fail")
 
@@ -235,7 +232,7 @@ env_scaled[env_variables_selected] <- scale(env_scaled[env_variables_selected])
 
 ss_env <- 
   left_join(ss_core, env_scaled) %>% 
-  select(all_of(c("Cruise", "Station", 
+  select(all_of(c("Month", "Station", 
                   "Abundance", "Biomass", 
                   env_variables_selected)))
 

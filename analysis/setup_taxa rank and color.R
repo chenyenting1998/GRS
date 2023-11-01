@@ -6,7 +6,7 @@
 
 # Author: Yen-Ting Chen
 # Date of creation: Unknown
-# Date of last modification: 2023/07/05
+# Date of last modification: 2023/10/24
 
 #####################
 # Set up environment
@@ -24,10 +24,10 @@ library(GRSmacrofauna)
 # Define function 
 ##################
 # could only be used in this script
-reduce_taxa_length <- function(data) {
+reduce_taxa_length <- function(data, percent_threshold = 1) {
   # label rare taxa as others
   data$Taxa <-
-    if_else(data$percent < 1, "Others", "Dominant")
+    if_else(data$percent < percent_threshold, "Others", "Dominant")
   # Relabel taxa > 1% with their original name
   data[data$Taxa == "Dominant",]$Taxa <-
     data[data$Taxa == "Dominant",]$Taxon
@@ -78,8 +78,8 @@ rank_bio <-
   mutate(percent = round(Biomass / sum(Biomass) * 100, 2)) %>%
   arrange(desc(percent))
 
-rank_bio <- reduce_taxa_length(rank_bio)
-
+rank_bio <- reduce_taxa_length(rank_bio, .5)
+View(rank_bio)
 ##################################
 # 4. Assign color by reduced taxa
 ##################################

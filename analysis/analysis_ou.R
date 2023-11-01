@@ -6,7 +6,7 @@
 
 # Author: Yen-Ting Chen
 # Date of creation: 2023/08/30
-# Date of last modification: 2023/08/30
+# Date of last modification: 2023/10/29
 
 #######################
 # Set up environment
@@ -25,12 +25,12 @@ library(ggplot2)
 library(GGally)
 library(ggrepel)
 library(patchwork)
-library(GRSmacrofauna)
 library(writexl)
 
 # Load data
 load("data/cruise_color.Rdata") 
 load("data/env_variables.Rdata")
+load("data/env.Rdata")
 load("data/env_selected.Rdata")
 load("data/ou.Rdata")
 load("data/standing stock.Rdata")
@@ -45,16 +45,14 @@ source("source/lm_model.avg.R")
 mean(ou_core$In_situ_TOU)
 sd(ou_core$In_situ_TOU)
 ou_station %>%
-  select(Cruise, Station,
-         In_situ_TOU_mean, In_situ_TOU_sd,
-         In_situ_DOU_mean, In_situ_DOU_sd,
-         OPD_mean, OPD_sd) %>%
-write_xlsx("table/data/ou.xlsx")
+  select(Month, Station,
+         In_situ_TOU_mean, In_situ_TOU_sd) %>%
+  write_xlsx("table/data/ou.xlsx")
 
 # set up data
 sp <- 
   env %>% 
-  select(Cruise, Station, Depth, DRM) 
+  select(Month, Station, Depth, DRM) 
 
 # scale Depth and DRM
 sp$Depth <- (sp$Depth - mean(sp$Depth)) / sd(sp$Depth)
@@ -69,8 +67,8 @@ ou_sp <- left_join(ou_core, sp)
 insituTOU_sp_fullmodel <- 
   lm(In_situ_TOU ~
        DRM * Depth + 
-       DRM * Cruise + 
-       Depth * Cruise, 
+       DRM * Month + 
+       Depth * Month, 
      data = ou_sp,
      na.action = "na.fail")
 
@@ -97,12 +95,12 @@ get_model.avg_results(insituTOU_sp_avg, "table/model.avg/in.situ.TOU_sp_model.av
 # 2. Environmental drivers of SCOC 
 ##################################
 # scaling selected env variables
-env_scaled <- env_selected[c("Cruise", "Station", env_variables_selected)]
+env_scaled <- env_selected[c("Month", "Station", env_variables_selected)]
 env_scaled[env_variables_selected] <- scale(env_scaled[env_variables_selected])
 # Join OU data with scaled env
 ou_env <- 
   ou_core %>% 
-  select(-Habitat, -Date) %>% 
+  select(-Date) %>% 
   left_join(env_scaled)
 
 #############
@@ -137,36 +135,6 @@ InsituTOU_env_subset <- get.models(InsituTOU_env_d, subset = delta < 6 & !nested
 InsituTOU_env_avg <- model.avg(InsituTOU_env_subset)
 get_model.avg_results(InsituTOU_env_avg, "table/model.avg/In.situ.TOU_env_model.avg.xlsx")
 
-##########
-# T25 TOU
-##########
-T25TOU_env_fullmodel <- 
-  lm(T25_TOU ~ 
-       Fluorescence +
-       D50 +
-       TOC +
-       CN +
-       Chla +
-       Porosity,
-     data = ou_env,
-     na.action = "na.fail")
-
-# 
-# plot(T25TOU_env_fullmodel)
-T25TOU_env_fullmodel_sum <- summary(T25TOU_env_fullmodel)
-get_lm_summary(T25TOU_env_fullmodel_sum, "table/lm/T25.TOU_env_lm.xlsx")
-
-# dredge
-T25TOU_env_d <- dredge(T25TOU_env_fullmodel, extra = "R^2")
-T25TOU_env_d <- calculate_adjR2(T25TOU_env_fullmodel, T25TOU_env_d)
-T25TOU_env_d$nested <- nested(T25TOU_env_d)
-write_xlsx(list(dredge = T25TOU_env_d), 
-           "table/dredge/T25.TOU_env_d.xlsx")
-
-# model avg
-T25TOU_env_subset <- get.models(T25TOU_env_d, subset = delta < 6 & !nested(T25TOU_env_d))
-T25TOU_env_avg <- model.avg(T25TOU_env_subset)
-get_model.avg_results(T25TOU_env_avg, "table/model.avg/T25.TOU_env_model.avg.xlsx")
 
 #########################
 # 3. Casual relationships
@@ -174,18 +142,18 @@ get_model.avg_results(T25TOU_env_avg, "table/model.avg/T25.TOU_env_model.avg.xls
 ########################
 # core_level correlation
 ########################
-ss_ou_core_data <- ss_core %>% left_join(ou_core) %>% select(-Date) %>% left_join(env, c("Cruise", "Station"))
+ss_ou_core_data <- ss_core %>% left_join(ou_core) %>% select(-Date) %>% left_join(env, c("Month", "Station"))
 ss_ou_station_data <- ss_station %>% left_join(ou_station) %>% left_join(env)
 
 # casual spatial relationships with abundance, biomass, and SCOC
 # vs. DRM
-lm(Abundance ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Cruise == "OR1-1219", ]) %>% summary
-lm(Biomass ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Cruise == "OR1-1219", ]) %>% summary
-lm(In_situ_TOU ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Cruise == "OR1-1219", ]) %>% summary
+lm(Abundance ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Month == "March", ]) %>% summary ##
+lm(Biomass ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Month == "March", ]) %>% summary
+lm(In_situ_TOU ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Month == "March", ]) %>% summary
 
-lm(Abundance ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Cruise == "OR1-1242", ]) %>% summary
-lm(Biomass ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Cruise == "OR1-1242", ]) %>% summary
-lm(In_situ_TOU ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Cruise == "OR1-1242", ]) %>% summary
+lm(Abundance ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Month == "October", ]) %>% summary
+lm(Biomass ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Month == "October", ]) %>% summary ##
+lm(In_situ_TOU ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Month == "October", ]) %>% summary
 
 ##################################
 # Core-level correlation matrix
@@ -193,16 +161,16 @@ lm(In_situ_TOU ~ DRM, data = ss_ou_core_data[ss_ou_core_data$Cruise == "OR1-1242
 ss_ou_core_corr_data <-
   ss_core %>% 
   left_join(ou_core) %>% 
-  select(all_of(c("Cruise", "Station",
+  select(all_of(c("Month", "Station",
                   "Abundance", "Biomass", "In_situ_TOU"))) %>%
-  left_join(env[c("Cruise", "Station", 
+  left_join(env[c("Month", "Station", 
                   env_variables_spatial, 
                   env_variables_selected)])
 
 ss_ou_pairplot <- 
   ggpairs(ss_ou_core_corr_data, 
           columns = c("Abundance", "Biomass", "In_situ_TOU"),
-          aes(color = Cruise, fill = Cruise)) +
+          aes(color = Month, fill = Month)) +
   scale_color_manual(values = cruise_color) +
   scale_fill_manual(values = cruise_color) +
   theme_bw()
@@ -219,16 +187,16 @@ ggsave("figure/pairplot/ss_ou_pairplot.png",
 ss_ou_station_corr_data <-
   ss_station %>% 
   left_join(ou_station) %>% 
-  select(all_of(c("Cruise", "Station",
+  select(all_of(c("Month", "Station",
                   "Abundance_mean", "Biomass_mean", "In_situ_TOU_mean"))) %>%
-  left_join(env[c("Cruise", "Station", 
+  left_join(env[c("Month", "Station", 
                   env_variables_spatial, 
                   env_variables_selected)])
 
 ss_ou_pairplot <- 
   ggpairs(ss_ou_station_corr_data, 
           columns = c("Abundance_mean", "Biomass_mean", "In_situ_TOU_mean"),
-          aes(color = Cruise, fill = Cruise)) +
+          aes(color = Month, fill = Month)) +
   scale_color_manual(values = cruise_color) +
   scale_fill_manual(values = cruise_color) +
   theme_bw()
@@ -244,7 +212,7 @@ ss_ou_sp_env_pairplot <-
           columns = c("Abundance_mean", "Biomass_mean", "In_situ_TOU_mean",
                       env_variables_spatial, 
                       env_variables_selected),
-          aes(color = Cruise, fill = Cruise)) +
+          aes(color = Month, fill = Month)) +
   scale_color_manual(values = cruise_color) +
   scale_fill_manual(values = cruise_color) +
   theme_bw()
@@ -259,17 +227,17 @@ ggsave("figure/pairplot/ss_ou_sp_env_pairplot.png",
 ss_ou_names <- c("Abundance" = "Abundance~(ind.~m^{-2})",
                  "Biomass" = "Biomass~(g~m^{-2})",
                  "In_situ_TOU" = "TOU~(mmol~m^{-2}~d^{-1})",
-                 "OR1-1219" = "OR1-1219",
-                 "OR1-1242" = "OR1-1242")
+                 "March" = "March",
+                 "October" = "October")
 ss_ou_plot_data <-
   ss_core %>% 
   left_join(ou_core) %>% 
-  select(all_of(c("Cruise", "Station",
+  select(all_of(c("Month", "Station",
                   "Abundance", "Biomass", "In_situ_TOU"))) %>%
   pivot_longer(cols = c("Abundance", "Biomass", "In_situ_TOU"),
                names_to = "Variable",
                values_to = "Value") %>% 
-  group_by(Cruise, Station, Variable) %>% 
+  group_by(Month, Station, Variable) %>% 
   summarise(mean = mean(Value),
             sd = sd(Value)) %>% 
   left_join(env)
@@ -280,11 +248,11 @@ plot_ss_ou_env <- function(x){
              y = mean, 
              ymax = mean + sd, 
              ymin = mean - sd,
-             color = Cruise,
+             color = Month,
              label = Station)) +
     geom_pointrange() +
     geom_text_repel() +
-    facet_grid(Variable ~ Cruise, 
+    facet_grid(Variable ~ Month, 
                scales = "free",
                labeller = as_labeller(ss_ou_names, label_parsed)) +
     scale_color_manual(values = cruise_color) +
