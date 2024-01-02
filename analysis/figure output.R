@@ -24,40 +24,11 @@ source("source/plot_pca.R")
 ######################
 load("data/env_pca.RData")
 
-# env_pca_plot <-
-#   ggplot() +
-#   # plot variable segments
-#   geom_segment(data = env_pca_species,
-#                aes(x = PC1, y = PC2, xend = 0, yend = 0)) +
-#   # plot variable text
-#   geom_text(data = env_pca_species,
-#             aes(x = PC1 * 1.09, 
-#                 y = PC2 * 1.09, 
-#                 label = abbr),
-#             parse = TRUE) +
-#   # plot stations
-#   geom_point(data = env_pca_sites, 
-#              aes(x = PC1, y = PC2, color = Cruise)) +
-#   geom_label(data = env_pca_sites,#
-#              aes(x = PC1, y = PC2, label = Station, color = Cruise)) +
-#   # geom_label_repel(data = env_all_pca_sites[c(2:3),],
-#   #                  aes(x = PC1, y = PC2, label = Station, color = Cruise),
-#   #                  min.segment.length = 0) +
-#   # change axis label
-#   xlab(paste0("PC1 (", env_pca_eig[1], "% of total variance explained)")) +
-#   ylab(paste0("PC2 (", env_pca_eig[2], "% of total variance explained)")) +
-#   scale_color_manual(values = cruise_color) +
-#   scale_fill_manual(values = cruise_color) +
-#   coord_fixed()+
-#   theme_bw() +
-#   theme(legend.position = c(0.85,
-#                             0.1))
-
 ggsave("figure/publish/env_pca_plot.png", 
        plot = env_pca_plot,
        width = 5,
        height = 5,
-       scale = 1)
+       scale = 1.25)
 
 ##################
 # CTD profile ####
@@ -82,9 +53,9 @@ composition_figure <-
 
 ggsave("figure/publish/composition_figure.png",
        plot = composition_figure,
-       width= 13,
-       height = 6,
-       scale = 0.8)
+       width= 10,
+       height = 5,
+       scale = 1)
 
 #####################
 # Macrofauna PCA ####

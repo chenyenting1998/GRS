@@ -57,7 +57,8 @@ ord.rsquare <-
 
 # set up left_joining spatial data
 env_sp_metadata <- env[c("Month", "Station", "Depth", "DRM")]
-size_range = c(2, 5)
+point_size_range = c(3, 6.5)
+text_size_range = c(1.7, 3.5)
 size_depth_breaks <- c(30,50,70,90)
 size_drm_breaks = c(15, 20, 25)
 stretch = 0.2
@@ -142,13 +143,14 @@ count_pca_sc1_depth <-
              size = 3,
              color = "purple",
              label.padding = unit(0.15, "lines")) +
-  # sites
+  # sites point
   geom_point(data = count_sc1$pca_sites,
              aes(x = PC1,
                  y = PC2,
                  color = Month,
                  size = Depth)) +
-  scale_size_binned("Depth (m)", range = size_range + 1.5, breaks = size_depth_breaks) +
+  scale_size_binned("Depth (m)", range = point_size_range, breaks = size_depth_breaks) +
+  # sites text
   new_scale("size") +
   geom_text(data = count_sc1$pca_sites,
             aes(x = PC1,
@@ -157,7 +159,7 @@ count_pca_sc1_depth <-
                 size = Depth,
                 label = Station),
             color = "white") +
-  scale_size_binned("Depth (m)", range = size_range - 1.5, breaks = size_depth_breaks) +
+  scale_size_binned("Depth (m)", range = text_size_range, breaks = size_depth_breaks) +
   # change axis label
   xlab(paste0("PC1 (", count_sc1$pca_eig[1], "% of the total variance)")) +
   ylab(paste0("PC2 (", count_sc1$pca_eig[2], "% of the total variance)")) +
@@ -189,13 +191,14 @@ count_pca_sc1_drm <-
              size = 3,
              color = "purple",
              label.padding = unit(0.15, "lines")) +
-  # sites
+  # sites point
   geom_point(data = count_sc1$pca_sites,
              aes(x = PC1,
                  y = PC2,
                  color = Month,
                  size = DRM)) +
-  scale_size_binned("DRM (km)", range = size_range + 1.5, breaks = size_drm_breaks) +
+  scale_size_binned("DRM (km)", range = point_size_range, breaks = size_drm_breaks) +
+  # site text
   new_scale("size") +
   geom_text(data = count_sc1$pca_sites,
             aes(x = PC1,
@@ -203,7 +206,7 @@ count_pca_sc1_drm <-
                 label = Station,
                 size = DRM),
             color = "white") +
-  scale_size_binned("DRM (km)", range = size_range - 1.5, breaks = size_drm_breaks) +
+  scale_size_binned("DRM (km)", range = text_size_range, breaks = size_drm_breaks) +
   # change axis label
   xlab(paste0("PC1 (", count_sc1$pca_eig[1], "% of the total variance)")) +
   ylab(paste0("PC2 (", count_sc1$pca_eig[2], "% of the total variance)")) +
@@ -392,7 +395,7 @@ count_rda_plot_sc1_depth <-
                  y = RDA2,
                  color = Month,
                  size = Depth)) +
-  scale_size_binned("Depth (m)", range = size_range + 1.5, breaks = size_depth_breaks) +
+  scale_size_binned("Depth (m)", range = point_size_range, breaks = size_depth_breaks) +
   new_scale("size") +
   geom_text(data = count_rda_output_sc1$rda_sites,
             aes(x = RDA1,
@@ -400,7 +403,7 @@ count_rda_plot_sc1_depth <-
                 label = Station,
                 size = Depth),
             color = "white") +
-  scale_size_binned("Depth (m)", range = size_range - 1.5, breaks = size_depth_breaks) +
+  scale_size_binned("Depth (m)", range = text_size_range, breaks = size_depth_breaks) +
   
   # add R2
   xlab(paste0("RDA1 (", rda_eig_percent(count_rda_back)[1], "% of the total variance)")) +
@@ -448,7 +451,7 @@ count_rda_plot_sc1_drm <-
                  y = RDA2,
                  color = Month,
                  size = DRM)) +
-  scale_size_binned("DRM (km)", range = size_range + 1.5, breaks = size_drm_breaks) +
+  scale_size_binned("DRM (km)", range = point_size_range, breaks = size_drm_breaks) +
   new_scale("size") +
   geom_text(data = count_rda_output_sc1$rda_sites,
             aes(x = RDA1,
@@ -456,7 +459,7 @@ count_rda_plot_sc1_drm <-
                 label = Station,
                 size = DRM),
             color = "white") +
-  scale_size_binned("DRM (km)", range = size_range - 1.5, breaks = size_drm_breaks) +
+  scale_size_binned("DRM (km)", range = text_size_range, breaks = size_drm_breaks) +
   
   # add R2
   xlab(paste0("RDA1 (", rda_eig_percent(count_rda_back)[1], "% of the total variance)")) +
@@ -471,8 +474,10 @@ ggsave("figure/rda/count_rda_plot_sc1_drm.png",
        width = 8,
        height = 6)
 
+# pca
 save(count_pca_sc1, count_pca_sc2, 
-     count_pca_sc1_depth, count_rda_plot_sc1_drm, 
+     count_pca_sc1_depth, count_pca_sc1_drm, 
+     # rda
      count_rda_plot_sc1,
      count_rda_plot_sc1_drm, count_rda_plot_sc1_depth,
      file = "data/count_ord_sc1.RData")
